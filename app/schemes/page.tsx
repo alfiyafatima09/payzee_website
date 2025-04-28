@@ -61,123 +61,143 @@ export default function SchemesPage() {
     {
       id: 1,
       name: "Direct Benefit Transfer",
+      description: "Financial assistance directly transferred to beneficiaries' bank accounts",
+      amount: 5000,
       launchDate: "12 Jan 2022",
       targetGroup: "Below Poverty Line",
       fundAllocated: "₹5,000 Cr",
       status: "Active",
+      eligibility: {
+        dob: "01-01-1985",
+        gender: "Any",
+        state: "All",
+        district: "All",
+        income: "Below ₹2,50,000 per annum",
+        caste: "All",
+        tags: ["poverty", "direct-transfer"],
+      },
+      createdAt: "10 Jan 2022",
     },
     {
       id: 2,
       name: "PM Kisan",
+      description: "Financial benefit to land holding farmers' families",
+      amount: 6000,
       launchDate: "24 Feb 2021",
       targetGroup: "Farmers",
       fundAllocated: "₹2,500 Cr",
       status: "Active",
+      eligibility: {
+        dob: null,
+        gender: "Any",
+        state: "All",
+        district: "All",
+        income: null,
+        caste: "All",
+        tags: ["farmers", "agriculture"],
+      },
+      createdAt: "20 Feb 2021",
     },
     {
       id: 3,
       name: "MGNREGA",
+      description: "Employment guarantee scheme for rural households",
+      amount: 3500,
       launchDate: "05 Apr 2020",
       targetGroup: "Rural Workers",
       fundAllocated: "₹3,200 Cr",
       status: "Active",
+      eligibility: {
+        dob: null,
+        gender: "Any",
+        state: "All",
+        district: "Rural",
+        income: null,
+        caste: "All",
+        tags: ["rural", "employment"],
+      },
+      createdAt: "01 Apr 2020",
     },
     {
       id: 4,
       name: "Skill India",
+      description: "Training program for skill development",
+      amount: 8000,
       launchDate: "15 Jul 2021",
       targetGroup: "Youth",
       fundAllocated: "₹1,800 Cr",
       status: "Inactive",
+      eligibility: {
+        dob: "01-01-1990",
+        gender: "Any",
+        state: "All",
+        district: "All",
+        income: null,
+        caste: "All",
+        tags: ["youth", "skills", "training"],
+      },
+      createdAt: "10 Jul 2021",
     },
     {
       id: 5,
       name: "Digital India",
+      description: "Initiative to promote digital literacy",
+      amount: 7500,
       launchDate: "01 Aug 2022",
       targetGroup: "All Citizens",
       fundAllocated: "₹2,100 Cr",
       status: "Active",
+      eligibility: {
+        dob: null,
+        gender: "Any",
+        state: "All",
+        district: "All",
+        income: null,
+        caste: "All",
+        tags: ["digital", "literacy", "technology"],
+      },
+      createdAt: "25 Jul 2022",
     },
     {
       id: 6,
       name: "Startup India",
+      description: "Program to foster entrepreneurship and startups",
+      amount: 15000,
       launchDate: "16 Jan 2023",
       targetGroup: "Entrepreneurs",
       fundAllocated: "₹1,500 Cr",
       status: "Inactive",
+      eligibility: {
+        dob: null,
+        gender: "Any",
+        state: "All",
+        district: "All",
+        income: null,
+        caste: "All",
+        tags: ["startups", "business", "entrepreneurs"],
+      },
+      createdAt: "10 Jan 2023",
     },
     {
       id: 7,
       name: "Ayushman Bharat",
+      description: "Health insurance scheme for low-income families",
+      amount: 5000,
       launchDate: "23 Sep 2021",
       targetGroup: "Low Income Families",
       fundAllocated: "₹6,400 Cr",
       status: "Active",
+      eligibility: {
+        dob: null,
+        gender: "Any",
+        state: "All",
+        district: "All",
+        income: "Below ₹5,00,000 per annum",
+        caste: "All",
+        tags: ["health", "insurance", "medical"],
+      },
+      createdAt: "15 Sep 2021",
     },
-    {
-      id: 8,
-      name: "Pradhan Mantri Awas Yojana",
-      launchDate: "25 Jun 2015",
-      targetGroup: "Urban Poor",
-      fundAllocated: "₹4,500 Cr",
-      status: "Active",
-    },
-    {
-      id: 9,
-      name: "Swachh Bharat Mission",
-      launchDate: "02 Oct 2014",
-      targetGroup: "All Citizens",
-      fundAllocated: "₹3,800 Cr",
-      status: "Active",
-    },
-    {
-      id: 10,
-      name: "Ujjwala Yojana",
-      launchDate: "01 May 2016",
-      targetGroup: "Women",
-      fundAllocated: "₹2,200 Cr",
-      status: "Active",
-    },
-    {
-      id: 11,
-      name: "Atal Pension Yojana",
-      launchDate: "09 May 2015",
-      targetGroup: "Unorganized Sector",
-      fundAllocated: "₹1,900 Cr",
-      status: "Active",
-    },
-    {
-      id: 12,
-      name: "Pradhan Mantri Kisan Samman Nidhi",
-      launchDate: "24 Feb 2019",
-      targetGroup: "Small Farmers",
-      fundAllocated: "₹7,500 Cr",
-      status: "Active",
-    },
-    {
-      id: 13,
-      name: "National Health Mission",
-      launchDate: "12 Apr 2013",
-      targetGroup: "Rural Population",
-      fundAllocated: "₹3,100 Cr",
-      status: "Active",
-    },
-    {
-      id: 14,
-      name: "Pradhan Mantri Gram Sadak Yojana",
-      launchDate: "25 Dec 2000",
-      targetGroup: "Rural Areas",
-      fundAllocated: "₹2,800 Cr",
-      status: "Active",
-    },
-    {
-      id: 15,
-      name: "National Rural Livelihood Mission",
-      launchDate: "03 Jun 2011",
-      targetGroup: "Rural Women",
-      fundAllocated: "₹2,400 Cr",
-      status: "Active",
-    }
   ]
 
   // Filter schemes based on status
@@ -430,8 +450,12 @@ export default function SchemesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {currentSchemes.map((scheme) => (
-                  <TableRow key={scheme.id} className="hover:bg-[#EEEEEE] transition-colors">
+                {filteredSchemes.map((scheme) => (
+                  <TableRow
+                    key={scheme.id}
+                    className="hover:bg-[#EEEEEE] transition-colors cursor-pointer"
+                    onClick={() => (window.location.href = `/schemes/${scheme.id}`)}
+                  >
                     <TableCell className="font-medium py-4">{scheme.name}</TableCell>
                     <TableCell className="py-4">{scheme.launchDate}</TableCell>
                     <TableCell className="py-4">{scheme.targetGroup}</TableCell>
@@ -450,11 +474,27 @@ export default function SchemesPage() {
                     </TableCell>
                     <TableCell className="text-right py-4">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-[#2563EB]">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-gray-500 hover:text-[#2563EB]"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            (window.location.href = `/schemes/${scheme.id}`)
+                          }}
+                        >
                           <Edit className="h-4 w-4" />
                           <span className="sr-only">Edit</span>
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-red-500">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-gray-500 hover:text-red-500"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            // Delete functionality would go here
+                          }}
+                        >
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Delete</span>
                         </Button>
