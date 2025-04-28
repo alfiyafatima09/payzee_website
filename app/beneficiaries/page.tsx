@@ -54,6 +54,8 @@ export default function BeneficiariesPage() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [stateFilter, setStateFilter] = useState("all")
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   // Sample data for beneficiaries
   const beneficiaries = [
@@ -119,16 +121,54 @@ export default function BeneficiariesPage() {
   const filteredBeneficiaries =
     stateFilter === "all" ? beneficiaries : beneficiaries.filter((beneficiary) => beneficiary.state === stateFilter)
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredBeneficiaries.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentBeneficiaries = filteredBeneficiaries.slice(startIndex, endIndex)
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  // Generate page numbers
+  const getPageNumbers = () => {
+    const pageNumbers = []
+    const maxVisiblePages = 5
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i)
+      }
+    } else {
+      const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
+      const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+
+      if (startPage > 1) {
+        pageNumbers.push(1)
+        if (startPage > 2) {
+          pageNumbers.push('...')
+        }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i)
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pageNumbers.push('...')
+        }
+        pageNumbers.push(totalPages)
+      }
+    }
+
+    return pageNumbers
+  }
+
   // Get unique states for filter
   const states = [...new Set(beneficiaries.map((beneficiary) => beneficiary.state))]
-
-  // Count beneficiaries by state for the map
-  const beneficiariesByState = states.map((state) => {
-    return {
-      state,
-      count: beneficiaries.filter((beneficiary) => beneficiary.state === state).length,
-    }
-  })
 
   const sidebarItems = [
     { name: "Dashboard", icon: Home, active: false, href: "/" },
@@ -317,97 +357,85 @@ export default function BeneficiariesPage() {
             </div>
           </div>
 
-          {/* Split layout: Table and Map */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            {/* Left side: Table */}
-            <div className="border rounded-lg shadow-sm overflow-hidden">
-              <Table>
-                <TableHeader className="bg-[#F5F5F5]">
-                  <TableRow>
-                    <TableHead className="font-semibold text-xs uppercase">Beneficiary Name</TableHead>
-                    <TableHead className="font-semibold text-xs uppercase">State</TableHead>
-                    <TableHead className="font-semibold text-xs uppercase">Gender</TableHead>
-                    <TableHead className="font-semibold text-xs uppercase">Aadhaar Last 4</TableHead>
-                    <TableHead className="font-semibold text-xs uppercase">Location</TableHead>
-                    <TableHead className="font-semibold text-xs uppercase text-right">Actions</TableHead>
+          {/* Table */}
+          <div className="border rounded-lg shadow-sm overflow-hidden">
+            <Table>
+              <TableHeader className="bg-[#F5F5F5]">
+                <TableRow>
+                  <TableHead className="font-semibold text-xs uppercase">Beneficiary Name</TableHead>
+                  <TableHead className="font-semibold text-xs uppercase">State</TableHead>
+                  <TableHead className="font-semibold text-xs uppercase">Gender</TableHead>
+                  <TableHead className="font-semibold text-xs uppercase">Aadhaar Last 4</TableHead>
+                  <TableHead className="font-semibold text-xs uppercase">Location</TableHead>
+                  <TableHead className="font-semibold text-xs uppercase text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredBeneficiaries.map((beneficiary) => (
+                  <TableRow key={beneficiary.id} className="hover:bg-[#EEEEEE] transition-colors">
+                    <TableCell className="font-medium py-4">{beneficiary.name}</TableCell>
+                    <TableCell className="py-4">{beneficiary.state}</TableCell>
+                    <TableCell className="py-4">{beneficiary.gender}</TableCell>
+                    <TableCell className="py-4">XXXX XXXX {beneficiary.aadhaar}</TableCell>
+                    <TableCell className="py-4">{beneficiary.location}</TableCell>
+                    <TableCell className="text-right py-4">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-[#2563EB]">
+                          <Edit className="h-4 w-4" />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-red-500">
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredBeneficiaries.map((beneficiary) => (
-                    <TableRow key={beneficiary.id} className="hover:bg-[#EEEEEE] transition-colors">
-                      <TableCell className="font-medium py-4">{beneficiary.name}</TableCell>
-                      <TableCell className="py-4">{beneficiary.state}</TableCell>
-                      <TableCell className="py-4">{beneficiary.gender}</TableCell>
-                      <TableCell className="py-4">XXXX XXXX {beneficiary.aadhaar}</TableCell>
-                      <TableCell className="py-4">{beneficiary.location}</TableCell>
-                      <TableCell className="text-right py-4">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-[#2563EB]">
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Edit</span>
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-red-500">
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Delete</span>
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Right side: Map */}
-            <div className="border rounded-lg shadow-sm overflow-hidden">
-              <div className="p-4 bg-[#F5F5F5] border-b">
-                <h2 className="font-semibold text-sm">Beneficiary Distribution Map</h2>
-              </div>
-              <div className="p-4 h-[400px] bg-gray-50 relative">
-                {/* Simple map visualization */}
-                <div className="absolute inset-4 bg-white border rounded-lg p-4">
-                  <div className="h-full flex flex-col">
-                    <div className="text-sm text-gray-500 mb-4">Beneficiaries by State</div>
-                    <div className="flex-1 grid grid-cols-1 gap-2">
-                      {beneficiariesByState.map((item) => (
-                        <div key={item.state} className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <MapPin className="h-4 w-4 text-[#2563EB] mr-2" />
-                            <span className="text-sm font-medium">{item.state}</span>
-                          </div>
-                          <Badge className="bg-[#2563EB]">{item.count}</Badge>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="text-xs text-gray-400 mt-4">
-                      Note: This is a simplified representation. Interactive map integration available in the full
-                      version.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+                ))}
+              </TableBody>
+            </Table>
           </div>
 
           {/* Pagination */}
           <Pagination>
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious href="#" />
+                <PaginationPrevious 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (currentPage > 1) handlePageChange(currentPage - 1)
+                  }}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                />
               </PaginationItem>
+              {getPageNumbers().map((page, index) => (
+                <PaginationItem key={index}>
+                  {page === '...' ? (
+                    <PaginationEllipsis />
+                  ) : (
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handlePageChange(page as number)
+                      }}
+                      isActive={currentPage === page}
+                    >
+                      {page}
+                    </PaginationLink>
+                  )}
+                </PaginationItem>
+              ))}
               <PaginationItem>
-                <PaginationLink href="#" isActive>
-                  1
-                </PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#">2</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationEllipsis />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext href="#" />
+                <PaginationNext 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (currentPage < totalPages) handlePageChange(currentPage + 1)
+                  }}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                />
               </PaginationItem>
             </PaginationContent>
           </Pagination>
