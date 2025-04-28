@@ -48,6 +48,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Sidebar } from "@/components/sidebar"
 
 // Register ChartJS components
 ChartJS.register(
@@ -69,17 +70,19 @@ interface SchemeData {
   name: string;
   value: number;
   tags: string[];
-  color: string;
 }
 
-// Define types for chart data
 interface MonthlyData {
   name: string;
   amount: number;
 }
 
+interface FilterData {
+  value: number;
+  color: string;
+}
+
 export default function Dashboard() {
-  const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   // Sample data for charts
@@ -99,107 +102,63 @@ export default function Dashboard() {
   ]
 
   // Sample data with tags
-  const schemeData: SchemeData[] = [
-    { name: 'Rural Credit Scheme', value: 35, tags: ['Farmers', 'Rural'], color: '#0088FE' },
-    { name: 'Women Entrepreneurship Fund', value: 20, tags: ['Women Entrepreneurs', 'Business'], color: '#00C49F' },
-    { name: 'Student Scholarship Program', value: 15, tags: ['Students', 'Education'], color: '#FFBB28' },
-    { name: 'Girl Child Education Support', value: 10, tags: ['Girls', 'Education'], color: '#FF8042' },
-    { name: 'Senior Pension Fund', value: 12, tags: ['Senior Citizens', 'Welfare'], color: '#8884d8' },
-    { name: 'Agricultural Innovation Grant', value: 8, tags: ['Farmers', 'Innovation'], color: '#82ca9d' },
-  ];
-
-  // Extract all unique tags from the data
-  const allTags = Array.from(
-    new Set(schemeData.flatMap(scheme => scheme.tags))
-  ).sort();
-
-  const beneficiaries = [
-    { name: "Rajesh Kumar", state: "Uttar Pradesh", gender: "Male", aadhaar: "1234" },
-    { name: "Priya Singh", state: "Bihar", gender: "Female", aadhaar: "5678" },
-    { name: "Amit Patel", state: "Gujarat", gender: "Male", aadhaar: "9012" },
-    { name: "Sunita Sharma", state: "Rajasthan", gender: "Female", aadhaar: "3456" },
-    { name: "Vikram Mehta", state: "Maharashtra", gender: "Male", aadhaar: "7890" },
+  const schemesByTag: SchemeData[] = [
+    { name: "Girls' Education", value: 25, tags: ["education", "girls"] },
+    { name: "Farmer Support", value: 30, tags: ["farmers", "agriculture"] },
+    { name: "Healthcare", value: 25, tags: ["health", "medical"] },
+    { name: "Senior Citizen", value: 20, tags: ["elderly", "pension"] },
   ]
-
-  const vendors = [
-    { name: "Agro Solutions Ltd.", businessType: "Agriculture", kycStatus: "Verified" },
-    { name: "Rural Supplies Co.", businessType: "General Store", kycStatus: "Pending" },
-    { name: "Tech Village Pvt. Ltd.", businessType: "Technology", kycStatus: "Verified" },
-    { name: "Health First Services", businessType: "Healthcare", kycStatus: "Verified" },
-    { name: "Edu Materials Inc.", businessType: "Education", kycStatus: "Pending" },
-  ]
-
-  const sidebarItems = [
-    { name: "Dashboard", icon: Home, active: true, path: "/" },
-    { name: "Schemes", icon: BarChart3, active: false, path: "/schemes" },
-    { name: "Beneficiaries", icon: Users, active: false, path: "/beneficiaries" },
-    { name: "Vendors", icon: Store, active: false, path: "/vendors" },
-    { name: "Transactions", icon: CreditCard, active: false, path: "/transactions" },
-    { name: "Settings", icon: Settings, active: false, path: "/settings" },
-  ]
-
   // Dropdown options for time range
+  const timeFilterOptions = ["Last Week", "Last Month", "Last 6 Months", "Last Year", "All Time"]
+  const [activeTimeFilter, setActiveTimeFilter] = useState("Last Year")
+  
+  // Time range options for the line chart
   const timeRanges = [
     { label: "Last 30 days", value: "30d" },
     { label: "Last 6 months", value: "6m" },
     { label: "Last 1 year", value: "1y" },
   ]
-
-  // Dummy data for each time range
-  const fundsDataByRange = {
-    "30d": { labels: ["Week 1", "Week 2", "Week 3", "Week 4"], data: [1.2, 1.5, 2.0, 1.8] },
-    "6m": { labels: ["Mar", "Apr", "May", "Jun", "Jul", "Aug"], data: [1.2, 1.5, 2.0, 1.8, 2.5, 3.0] },
-    "1y": { labels: ["Sep", "Oct", "Nov", "Dec", "Jan", "Feb"], data: [1.0, 1.3, 1.7, 2.1, 2.6, 3.2] },
-  }
-
-  const pastelColors = [
-    "#A5D8FF", // blue
-    "#B9FBC0", // mint
-    "#D0BFFF", // purple
-    "#FFD6A5", // orange
-    "#FFB5E8", // pink
-    "#C1F0F6", // teal
-  ]
-
-  const schemeFilters = [
-    { label: "Girls Scheme", key: "girls", color: pastelColors[4] },
-    { label: "Elderly Support", key: "elderly", color: pastelColors[2] },
-    { label: "Farmers Welfare", key: "farmers", color: pastelColors[1] },
-    { label: "Health Scheme", key: "health", color: pastelColors[3] },
-  ]
-
-  const donutDataByFilter = {
-    girls: { value: 45, color: pastelColors[4] },
-    farmers: { value: 30, color: pastelColors[1] },
-    health: { value: 25, color: pastelColors[3] },
-    elderly: { value: 20, color: pastelColors[2] },
-  }
-
   const [selectedRange, setSelectedRange] = useState("6m")
-  const [activeFilters, setActiveFilters] = useState(["girls", "farmers", "health"])
 
-  // Prepare line chart data
+  // Scheme filters 
+  const schemeFilters = [
+    { key: "girls", label: "Girls Education", active: true, color: "#FF6384" },
+    { key: "farmers", label: "Farmer Support", active: true, color: "#36A2EB" },
+    { key: "health", label: "Healthcare", active: true, color: "#FFCE56" },
+    { key: "elderly", label: "Senior Citizens", active: true, color: "#4BC0C0" },
+  ]
+  const [activeFilters, setActiveFilters] = useState(schemeFilters.filter(f => f.active).map(f => f.key))
+
+  // Toggle a filter
+  const toggleFilter = (key: string) => {
+    if (activeFilters.includes(key)) {
+      if (activeFilters.length > 1) {
+        setActiveFilters(activeFilters.filter(f => f !== key))
+      }
+    } else {
+      setActiveFilters([...activeFilters, key])
+    }
+  }
+
+  // Prepare data for charts
   const fundsLineData = {
-    labels: fundsDataByRange[selectedRange].labels,
+    labels: monthlyData.map(d => d.name),
     datasets: [
       {
-        label: "Funds Disbursed (Cr)",
-        data: fundsDataByRange[selectedRange].data,
-        fill: true,
-        borderColor: pastelColors[0],
-        backgroundColor: (ctx: any) => {
-          const chart = ctx.chart;
-          const {ctx: c, chartArea} = chart;
-          if (!chartArea) return null;
-          const gradient = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-          gradient.addColorStop(0, "rgba(165,216,255,0.5)");
-          gradient.addColorStop(1, "rgba(255,255,255,0.2)");
-          return gradient;
+        label: "Funds Distributed",
+        data: monthlyData.map(d => d.amount),
+        borderColor: '#2563EB',
+        backgroundColor: '#93C5FD',
+        borderWidth: 2,
+        pointBackgroundColor: '#2563EB',
+        pointRadius: 4,
+        pointBorderWidth: 2,
+        pointBorderColor: '#FFFFFF',
+        tension: 0.3,
+        fill: {
+          target: 'origin',
+          above: 'rgba(147, 197, 253, 0.2)',
         },
-        tension: 0.5,
-        pointBackgroundColor: pastelColors[0],
-        pointRadius: 5,
-        pointHoverRadius: 8,
       },
     ],
   }
@@ -232,15 +191,24 @@ export default function Dashboard() {
         ticks: {
           color: '#6B7280',
           font: { family: 'Inter', size: 13 },
-          callback: (tickValue: number) => `₹${tickValue}Cr`,
+          callback: function(this: any, tickValue: any) {
+            return `₹${tickValue}Cr`
+          },
         },
       },
     },
-    animation: { duration: 1200, easing: 'easeOutQuart' },
+  }
+
+  // Create data mapping for donut chart
+  const donutDataByFilter: Record<string, FilterData> = {
+    girls: { value: 25, color: "#FF6384" },
+    farmers: { value: 30, color: "#36A2EB" },
+    health: { value: 25, color: "#FFCE56" },
+    elderly: { value: 20, color: "#4BC0C0" },
   }
 
   // Donut chart data
-  const filteredDonut = activeFilters.map(f => donutDataByFilter[f])
+  const filteredDonut = activeFilters.map(f => donutDataByFilter[f as keyof typeof donutDataByFilter])
   const donutChartData = {
     labels: activeFilters.map(f => schemeFilters.find(s => s.key === f)?.label),
     datasets: [
@@ -252,6 +220,7 @@ export default function Dashboard() {
       },
     ],
   }
+
   const donutChartOptions = {
     cutout: '70%',
     plugins: {
@@ -269,100 +238,16 @@ export default function Dashboard() {
         usePointStyle: true,
       },
     },
-    animation: { animateRotate: true, duration: 1200, easing: 'easeOutQuart' },
   }
+  
   const totalDistributed = filteredDonut.reduce((sum, d) => sum + d.value, 0)
-
+  
   return (
     <div className={`${inter.className} min-h-screen bg-white flex`}>
-      {/* Sidebar for desktop */}
-      <aside
-        className={`fixed inset-y-0 z-20 flex h-full flex-col border-r bg-white transition-all duration-300 ${
-          isCollapsed ? "w-[70px]" : "w-[240px]"
-        } hidden md:flex`}
-      >
-        <div className="flex h-14 items-center border-b px-3">
-          <div className={`flex items-center gap-2 ${isCollapsed ? "justify-center w-full" : ""}`}>
-            {!isCollapsed && <span className="font-semibold text-lg">PayZee</span>}
-            {isCollapsed && <span className="font-bold text-lg">PZ</span>}
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`ml-auto ${isCollapsed ? "hidden" : ""}`}
-            onClick={() => setIsCollapsed(true)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-            <span className="sr-only">Collapse sidebar</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`ml-auto ${!isCollapsed ? "hidden" : ""}`}
-            onClick={() => setIsCollapsed(false)}
-          >
-            <ChevronRight className="h-4 w-4" />
-            <span className="sr-only">Expand sidebar</span>
-          </Button>
-        </div>
-        <nav className="flex-1 overflow-auto py-4">
-          <ul className="grid gap-1 px-2">
-            {sidebarItems.map((item) => (
-              <li key={item.name}>
-                <Link
-                  href={item.path}
-                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                    item.active ? "bg-black text-white" : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  <item.icon className={`h-4 w-4 ${isCollapsed ? "mx-auto" : ""}`} />
-                  {!isCollapsed && <span>{item.name}</span>}
-                  {isCollapsed && <span className="sr-only">{item.name}</span>}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </aside>
-
-      {/* Mobile sidebar */}
-      <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
-        <SheetContent side="left" className="p-0 w-[240px]">
-          <div className="flex h-14 items-center border-b px-3">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-lg">PayZee</span>
-            </div>
-            <Button variant="ghost" size="icon" className="ml-auto" onClick={() => setIsMobileOpen(false)}>
-              <X className="h-4 w-4" />
-              <span className="sr-only">Close sidebar</span>
-            </Button>
-          </div>
-          <nav className="flex-1 overflow-auto py-4">
-            <ul className="grid gap-1 px-2">
-              {sidebarItems.map((item) => (
-                <li key={item.name}>
-                  <Link
-                    href={item.path}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                      item.active ? "bg-black text-white" : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                    onClick={() => setIsMobileOpen(false)}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.name}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </SheetContent>
-      </Sheet>
-
+      <Sidebar pathname="/" isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
+      
       {/* Main content */}
-      <div
-        className={`flex-1 md:ml-[${isCollapsed ? "70px" : "240px"}] transition-all duration-300`}
-        style={{ marginLeft: isCollapsed ? "70px" : "240px" }}
-      >
+      <div className="flex-1 md:ml-[240px] transition-all duration-300">
         {/* Top navbar */}
         <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-white px-4 sm:px-6">
           <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMobileOpen(true)}>
@@ -423,46 +308,48 @@ export default function Dashboard() {
           </div>
 
           {/* Stats cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">Total Funds Disbursed</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-gray-500">Total Schemes</CardTitle>
+                <CreditCard className="h-4 w-4 text-gray-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">₹1,245.89 Cr</div>
-                <p className="text-xs text-gray-500 mt-1">+12.5% from last month</p>
+                <div className="text-2xl font-bold">65</div>
+                <p className="text-xs text-green-500 flex items-center">+5.1% from last month</p>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-gray-500">Total Beneficiaries</CardTitle>
+                <Users className="h-4 w-4 text-gray-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">2.4M</div>
-                <p className="text-xs text-gray-500 mt-1">+5.2% from last month</p>
+                <div className="text-2xl font-bold">3.2M</div>
+                <p className="text-xs text-green-500 flex items-center">+12.4% from last month</p>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">Total Vendors</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-gray-500">Total Fund Allocated</CardTitle>
+                <Wallet className="h-4 w-4 text-gray-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">48.5K</div>
-                <p className="text-xs text-gray-500 mt-1">+3.7% from last month</p>
+                <div className="text-2xl font-bold">₹8,500 Cr</div>
+                <p className="text-xs text-green-500 flex items-center">+7.8% from last month</p>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">Total Transactions</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-gray-500">Pending Approvals</CardTitle>
+                <BarChart3 className="h-4 w-4 text-gray-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">12.8M</div>
-                <p className="text-xs text-gray-500 mt-1">+8.3% from last month</p>
+                <div className="text-2xl font-bold">42</div>
+                <p className="text-xs text-red-500 flex items-center">+2.5% from last month</p>
               </CardContent>
             </Card>
-          </div>
-
-          {/* Charts */}
+          </div>          {/* Charts grid */}
           <div className="grid gap-6 md:grid-cols-2 mb-6">
             {/* Card 1: Monthly Funds Disbursed */}
             <motion.div
@@ -546,69 +433,142 @@ export default function Dashboard() {
                   <span className="text-xs text-gray-500 mb-1">Total Distributed</span>
                   <span className="font-bold text-2xl text-gray-800">₹{totalDistributed}Cr</span>
                 </div>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Tables */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Beneficiaries Added</CardTitle>
+              </div>            </motion.div>
+            
+            {/* Line Chart */}
+            <Card className="overflow-hidden bg-white/60 backdrop-blur-md shadow-md">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Fund Distribution</CardTitle>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      {activeTimeFilter}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    {timeFilterOptions.map((option) => (
+                      <DropdownMenuItem key={option} onClick={() => setActiveTimeFilter(option)}>
+                        {option}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>State</TableHead>
-                      <TableHead>Gender</TableHead>
-                      <TableHead>Aadhaar Last 4</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {beneficiaries.map((beneficiary) => (
-                      <TableRow key={beneficiary.name}>
-                        <TableCell className="font-medium">{beneficiary.name}</TableCell>
-                        <TableCell>{beneficiary.state}</TableCell>
-                        <TableCell>{beneficiary.gender}</TableCell>
-                        <TableCell>XXXX XXXX {beneficiary.aadhaar}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="h-[300px]">
+                  <Line data={fundsLineData} options={fundsLineOptions} />
+                </div>
               </CardContent>
             </Card>
+
+            {/* Pie Chart */}
+            <Card className="relative overflow-hidden">
+              <CardHeader>
+                <CardTitle>Distribution by Sector</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px] relative">
+                <Pie data={donutChartData} options={donutChartOptions} />
+                {/* Center text overlay */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold">{`${totalDistributed}%`}</div>
+                    <div className="text-sm text-gray-500">Total</div>
+                  </div>
+                </div>
+              </CardContent>
+              <div className="px-6 pb-6 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {schemeFilters.map((filter) => (
+                  <button
+                    key={filter.key}
+                    onClick={() => toggleFilter(filter.key)}
+                    className={`flex items-center gap-2 py-1 px-2 rounded-md text-sm ${
+                      activeFilters.includes(filter.key)
+                        ? 'bg-gray-100 text-gray-800'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div
+                      className="h-3 w-3 rounded-full"
+                      style={{ backgroundColor: filter.color }}
+                    />
+                    <span>{filter.label}</span>
+                  </button>
+                ))}
+              </div>
+            </Card>
+
+            {/* Recent Activity */}
             <Card>
               <CardHeader>
-                <CardTitle>Recent Vendor Registrations</CardTitle>
+                <CardTitle>Recent Activities</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Vendor Name</TableHead>
-                      <TableHead>Business Type</TableHead>
-                      <TableHead>KYC Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {vendors.map((vendor) => (
-                      <TableRow key={vendor.name}>
-                        <TableCell className="font-medium">{vendor.name}</TableCell>
-                        <TableCell>{vendor.businessType}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={vendor.kycStatus === "Verified" ? "default" : "outline"}
-                            className={vendor.kycStatus === "Verified" ? "bg-black text-white" : "bg-white text-black"}
-                          >
-                            {vendor.kycStatus}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="space-y-8">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex">
+                      <div className="mr-4 mt-0.5">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                          <BarChart3 className="h-4 w-4" />
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">New Scheme Created</p>
+                        <p className="text-sm text-gray-500">Educational Support for Rural Girls</p>
+                        <p className="text-xs text-gray-400">2 hours ago</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Transactions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Disbursements</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <div className="mr-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600">₹</div>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">MGNREGA Fund Transfer</p>
+                      <p className="text-xs text-gray-500">42,500 beneficiaries</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">₹450 Cr</p>
+                      <p className="text-xs text-gray-500">June 15, 2023</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="mr-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600">₹</div>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">PM Kisan</p>
+                      <p className="text-xs text-gray-500">15,200 beneficiaries</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">₹320 Cr</p>
+                      <p className="text-xs text-gray-500">June 12, 2023</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="mr-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600">₹</div>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Rural Housing Scheme</p>
+                      <p className="text-xs text-gray-500">8,750 beneficiaries</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">₹280 Cr</p>
+                      <p className="text-xs text-gray-500">June 10, 2023</p>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>

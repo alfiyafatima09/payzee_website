@@ -40,22 +40,13 @@ import { Label } from "@/components/ui/label"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Sidebar } from "@/components/sidebar"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export default function SettingsPage() {
-  const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
-
-  const sidebarItems = [
-    { name: "Dashboard", icon: Home, active: false, href: "/" },
-    { name: "Schemes", icon: BarChart3, active: false, href: "/schemes" },
-    { name: "Beneficiaries", icon: Users, active: false, href: "/beneficiaries" },
-    { name: "Vendors", icon: Store, active: false, href: "/vendors" },
-    { name: "Transactions", icon: CreditCard, active: false, href: "/transactions" },
-    { name: "Settings", icon: SettingsIcon, active: true, href: "/settings" },
-  ]
 
   return (
     <div className={`${inter.className} min-h-screen bg-white flex`}>
