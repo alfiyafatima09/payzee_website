@@ -405,104 +405,6 @@ export default function SchemeDetailsPage() {
 
   return (
     <div className={`${inter.className} flex min-h-screen bg-white`}>
-      {/* Sidebar for desktop */}
-      <aside
-        className={`fixed inset-y-0 z-20 flex h-full flex-col border-r bg-white transition-all duration-300 ${
-          isCollapsed ? 'w-[70px]' : 'w-[240px]'
-        } hidden md:flex`}
-      >
-        <div className="flex h-14 items-center border-b px-3">
-          <div
-            className={`flex items-center gap-2 ${isCollapsed ? 'w-full justify-center' : ''}`}
-          >
-            {!isCollapsed && (
-              <span className="text-lg font-semibold">PayZee</span>
-            )}
-            {isCollapsed && <span className="text-lg font-bold">PZ</span>}
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`ml-auto ${isCollapsed ? 'hidden' : ''}`}
-            onClick={() => setIsCollapsed(true)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-            <span className="sr-only">Collapse sidebar</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`ml-auto ${!isCollapsed ? 'hidden' : ''}`}
-            onClick={() => setIsCollapsed(false)}
-          >
-            <ChevronRight className="h-4 w-4" />
-            <span className="sr-only">Expand sidebar</span>
-          </Button>
-        </div>
-        <nav className="flex-1 overflow-auto py-4">
-          <ul className="grid gap-1 px-2">
-            {sidebarItems.map((item) => (
-              <li key={item.name}>
-                <Link
-                  href={item.href}
-                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                    item.active
-                      ? 'bg-black text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <item.icon
-                    className={`h-4 w-4 ${isCollapsed ? 'mx-auto' : ''}`}
-                  />
-                  {!isCollapsed && <span>{item.name}</span>}
-                  {isCollapsed && <span className="sr-only">{item.name}</span>}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </aside>
-
-      {/* Mobile sidebar */}
-      <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
-        <SheetContent side="left" className="w-[240px] p-0">
-          <div className="flex h-14 items-center border-b px-3">
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-semibold">PayZee</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ml-auto"
-              onClick={() => setIsMobileOpen(false)}
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">Close sidebar</span>
-            </Button>
-          </div>
-          <nav className="flex-1 overflow-auto py-4">
-            <ul className="grid gap-1 px-2">
-              {sidebarItems.map((item) => (
-                <li key={item.name}>
-                  <Link
-                    href={item.href}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                      item.active
-                        ? 'bg-black text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                    onClick={() => setIsMobileOpen(false)}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.name}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </SheetContent>
-      </Sheet>
-
       {/* Main content */}
       <div className={`flex-1 transition-all duration-300`}>
         {/* Top navbar */}
@@ -562,8 +464,7 @@ export default function SchemeDetailsPage() {
                 size="sm"
                 onClick={() => router.push('/schemes')}
               >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Schemes
+                <ArrowLeft className="h-4 w-4" />
               </Button>
               <h1 className="text-2xl font-semibold">
                 {isEditing ? 'Edit Scheme' : 'Scheme Details'}
