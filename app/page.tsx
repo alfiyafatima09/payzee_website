@@ -360,7 +360,7 @@ export default function Dashboard() {
               className="relative rounded-2xl bg-white/60 backdrop-blur-md shadow-lg p-6 transition-all duration-300 hover:shadow-blue-200"
               style={{ minHeight: 370 }}
             >
-              <Wallet className="absolute top-5 right-5 text-blue-400/80 w-7 h-7" />
+
               <div className="flex items-center justify-between mb-2">
                 <h2 className="font-semibold text-lg text-gray-800">Monthly Funds Disbursed</h2>
                 <DropdownMenu>
@@ -392,7 +392,7 @@ export default function Dashboard() {
               className="relative rounded-2xl bg-white/60 backdrop-blur-md shadow-lg p-6 transition-all duration-300 hover:shadow-pink-200"
               style={{ minHeight: 370 }}
             >
-              <Wallet className="absolute top-5 right-5 text-pink-400/80 w-7 h-7" />
+
               <div className="flex items-center justify-between mb-2">
                 <h2 className="font-semibold text-lg text-gray-800">Funds Distributed by Scheme</h2>
                 <div className="flex gap-2 flex-wrap">
@@ -434,68 +434,7 @@ export default function Dashboard() {
                   <span className="font-bold text-2xl text-gray-800">₹{totalDistributed}Cr</span>
                 </div>
               </div>            </motion.div>
-            
-            {/* Line Chart */}
-            <Card className="overflow-hidden bg-white/60 backdrop-blur-md shadow-md">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Fund Distribution</CardTitle>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      {activeTimeFilter}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {timeFilterOptions.map((option) => (
-                      <DropdownMenuItem key={option} onClick={() => setActiveTimeFilter(option)}>
-                        {option}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <Line data={fundsLineData} options={fundsLineOptions} />
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Pie Chart */}
-            <Card className="relative overflow-hidden">
-              <CardHeader>
-                <CardTitle>Distribution by Sector</CardTitle>
-              </CardHeader>
-              <CardContent className="h-[300px] relative">
-                <Pie data={donutChartData} options={donutChartOptions} />
-                {/* Center text overlay */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold">{`${totalDistributed}%`}</div>
-                    <div className="text-sm text-gray-500">Total</div>
-                  </div>
-                </div>
-              </CardContent>
-              <div className="px-6 pb-6 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {schemeFilters.map((filter) => (
-                  <button
-                    key={filter.key}
-                    onClick={() => toggleFilter(filter.key)}
-                    className={`flex items-center gap-2 py-1 px-2 rounded-md text-sm ${
-                      activeFilters.includes(filter.key)
-                        ? 'bg-gray-100 text-gray-800'
-                        : 'text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div
-                      className="h-3 w-3 rounded-full"
-                      style={{ backgroundColor: filter.color }}
-                    />
-                    <span>{filter.label}</span>
-                  </button>
-                ))}
-              </div>
-            </Card>
 
             {/* Recent Activity */}
             <Card>
