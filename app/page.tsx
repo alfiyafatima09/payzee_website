@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from 'react'
 import {
   BarChart3,
   Bell,
@@ -14,10 +14,25 @@ import {
   Store,
   Users,
   X,
+  Wallet,
 } from "lucide-react"
 import { Inter } from "next/font/google"
 import Image from "next/image"
 import Link from "next/link"
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js'
+import { Line, Pie } from 'react-chartjs-2'
+import { motion } from "framer-motion"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -33,28 +48,42 @@ import {
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  CartesianGrid,
-  Cell,
-  Legend,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
   Tooltip,
-  XAxis,
-  YAxis,
-} from "@/components/ui/chart"
+  Legend
+)
 
 const inter = Inter({ subsets: ["latin"] })
+
+// Define the type for scheme data
+interface SchemeData {
+  name: string;
+  value: number;
+  tags: string[];
+  color: string;
+}
+
+// Define types for chart data
+interface MonthlyData {
+  name: string;
+  amount: number;
+}
 
 export default function Dashboard() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   // Sample data for charts
-  const monthlyData = [
+  const monthlyData: MonthlyData[] = [
     { name: "Jan", amount: 4000 },
     { name: "Feb", amount: 3000 },
     { name: "Mar", amount: 5000 },
@@ -69,14 +98,20 @@ export default function Dashboard() {
     { name: "Dec", amount: 10000 },
   ]
 
-  const schemeData = [
-    { name: "Direct Benefit Transfer", value: 45 },
-    { name: "PM Kisan", value: 25 },
-    { name: "MGNREGA", value: 15 },
-    { name: "Other Schemes", value: 15 },
-  ]
+  // Sample data with tags
+  const schemeData: SchemeData[] = [
+    { name: 'Rural Credit Scheme', value: 35, tags: ['Farmers', 'Rural'], color: '#0088FE' },
+    { name: 'Women Entrepreneurship Fund', value: 20, tags: ['Women Entrepreneurs', 'Business'], color: '#00C49F' },
+    { name: 'Student Scholarship Program', value: 15, tags: ['Students', 'Education'], color: '#FFBB28' },
+    { name: 'Girl Child Education Support', value: 10, tags: ['Girls', 'Education'], color: '#FF8042' },
+    { name: 'Senior Pension Fund', value: 12, tags: ['Senior Citizens', 'Welfare'], color: '#8884d8' },
+    { name: 'Agricultural Innovation Grant', value: 8, tags: ['Farmers', 'Innovation'], color: '#82ca9d' },
+  ];
 
-  const COLORS = ["#2563EB", "#4B5563", "#9CA3AF", "#D1D5DB"]
+  // Extract all unique tags from the data
+  const allTags = Array.from(
+    new Set(schemeData.flatMap(scheme => scheme.tags))
+  ).sort();
 
   const beneficiaries = [
     { name: "Rajesh Kumar", state: "Uttar Pradesh", gender: "Male", aadhaar: "1234" },
@@ -102,6 +137,141 @@ export default function Dashboard() {
     { name: "Transactions", icon: CreditCard, active: false, path: "/transactions" },
     { name: "Settings", icon: Settings, active: false, path: "/settings" },
   ]
+
+  // Dropdown options for time range
+  const timeRanges = [
+    { label: "Last 30 days", value: "30d" },
+    { label: "Last 6 months", value: "6m" },
+    { label: "Last 1 year", value: "1y" },
+  ]
+
+  // Dummy data for each time range
+  const fundsDataByRange = {
+    "30d": { labels: ["Week 1", "Week 2", "Week 3", "Week 4"], data: [1.2, 1.5, 2.0, 1.8] },
+    "6m": { labels: ["Mar", "Apr", "May", "Jun", "Jul", "Aug"], data: [1.2, 1.5, 2.0, 1.8, 2.5, 3.0] },
+    "1y": { labels: ["Sep", "Oct", "Nov", "Dec", "Jan", "Feb"], data: [1.0, 1.3, 1.7, 2.1, 2.6, 3.2] },
+  }
+
+  const pastelColors = [
+    "#A5D8FF", // blue
+    "#B9FBC0", // mint
+    "#D0BFFF", // purple
+    "#FFD6A5", // orange
+    "#FFB5E8", // pink
+    "#C1F0F6", // teal
+  ]
+
+  const schemeFilters = [
+    { label: "Girls Scheme", key: "girls", color: pastelColors[4] },
+    { label: "Elderly Support", key: "elderly", color: pastelColors[2] },
+    { label: "Farmers Welfare", key: "farmers", color: pastelColors[1] },
+    { label: "Health Scheme", key: "health", color: pastelColors[3] },
+  ]
+
+  const donutDataByFilter = {
+    girls: { value: 45, color: pastelColors[4] },
+    farmers: { value: 30, color: pastelColors[1] },
+    health: { value: 25, color: pastelColors[3] },
+    elderly: { value: 20, color: pastelColors[2] },
+  }
+
+  const [selectedRange, setSelectedRange] = useState("6m")
+  const [activeFilters, setActiveFilters] = useState(["girls", "farmers", "health"])
+
+  // Prepare line chart data
+  const fundsLineData = {
+    labels: fundsDataByRange[selectedRange].labels,
+    datasets: [
+      {
+        label: "Funds Disbursed (Cr)",
+        data: fundsDataByRange[selectedRange].data,
+        fill: true,
+        borderColor: pastelColors[0],
+        backgroundColor: (ctx: any) => {
+          const chart = ctx.chart;
+          const {ctx: c, chartArea} = chart;
+          if (!chartArea) return null;
+          const gradient = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          gradient.addColorStop(0, "rgba(165,216,255,0.5)");
+          gradient.addColorStop(1, "rgba(255,255,255,0.2)");
+          return gradient;
+        },
+        tension: 0.5,
+        pointBackgroundColor: pastelColors[0],
+        pointRadius: 5,
+        pointHoverRadius: 8,
+      },
+    ],
+  }
+
+  const fundsLineOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx: any) => `₹${ctx.raw} Cr`
+        },
+        backgroundColor: '#fff',
+        titleColor: '#222',
+        bodyColor: '#2563EB',
+        borderColor: '#A5D8FF',
+        borderWidth: 1,
+        padding: 12,
+        usePointStyle: true,
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: '#6B7280', font: { family: 'Inter', size: 13 } },
+      },
+      y: {
+        grid: { color: '#F3F4F6' },
+        ticks: {
+          color: '#6B7280',
+          font: { family: 'Inter', size: 13 },
+          callback: (tickValue: number) => `₹${tickValue}Cr`,
+        },
+      },
+    },
+    animation: { duration: 1200, easing: 'easeOutQuart' },
+  }
+
+  // Donut chart data
+  const filteredDonut = activeFilters.map(f => donutDataByFilter[f])
+  const donutChartData = {
+    labels: activeFilters.map(f => schemeFilters.find(s => s.key === f)?.label),
+    datasets: [
+      {
+        data: filteredDonut.map(d => d.value),
+        backgroundColor: filteredDonut.map(d => d.color),
+        borderWidth: 0,
+        hoverOffset: 8,
+      },
+    ],
+  }
+  const donutChartOptions = {
+    cutout: '70%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx: any) => `${ctx.label}: ${ctx.raw}%`,
+        },
+        backgroundColor: '#fff',
+        titleColor: '#222',
+        bodyColor: '#2563EB',
+        borderColor: '#FFD6A5',
+        borderWidth: 1,
+        padding: 12,
+        usePointStyle: true,
+      },
+    },
+    animation: { animateRotate: true, duration: 1200, easing: 'easeOutQuart' },
+  }
+  const totalDistributed = filteredDonut.reduce((sum, d) => sum + d.value, 0)
 
   return (
     <div className={`${inter.className} min-h-screen bg-white flex`}>
@@ -294,94 +464,90 @@ export default function Dashboard() {
 
           {/* Charts */}
           <div className="grid gap-6 md:grid-cols-2 mb-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Monthly Funds Disbursed</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={monthlyData}
-                      margin={{
-                        top: 5,
-                        right: 10,
-                        left: 10,
-                        bottom: 5,
-                      }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="name" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                      <YAxis
-                        tick={{ fontSize: 12 }}
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(value) => `₹${value / 1000}K`}
-                      />
-                      <Tooltip
-                        formatter={(value) => [`₹${value} Cr`, "Amount"]}
-                        contentStyle={{
-                          borderRadius: "6px",
-                          border: "1px solid #e5e7eb",
-                          boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-                        }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="amount"
-                        stroke="#2563EB"
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Funds Distributed by Scheme</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px] flex items-center justify-center">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={schemeData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={90}
-                        paddingAngle={2}
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        labelLine={false}
+            {/* Card 1: Monthly Funds Disbursed */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: 'easeOut' }}
+              whileHover={{ boxShadow: '0 8px 32px 0 rgba(37,99,235,0.15)', scale: 1.02 }}
+              className="relative rounded-2xl bg-white/60 backdrop-blur-md shadow-lg p-6 transition-all duration-300 hover:shadow-blue-200"
+              style={{ minHeight: 370 }}
+            >
+              <Wallet className="absolute top-5 right-5 text-blue-400/80 w-7 h-7" />
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-semibold text-lg text-gray-800">Monthly Funds Disbursed</h2>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="text-xs px-3 py-1 rounded-lg border-gray-200 bg-white/70 hover:bg-blue-50">
+                      {timeRanges.find(r => r.value === selectedRange)?.label}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {timeRanges.map(range => (
+                      <DropdownMenuItem key={range.value} onClick={() => setSelectedRange(range.value)}>
+                        {range.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="h-[240px] w-full flex items-center">
+                <Line data={fundsLineData} options={fundsLineOptions} />
+              </div>
+            </motion.div>
+
+            {/* Card 2: Funds Distributed by Scheme */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: 'easeOut' }}
+              whileHover={{ boxShadow: '0 8px 32px 0 rgba(255,181,232,0.15)', scale: 1.02 }}
+              className="relative rounded-2xl bg-white/60 backdrop-blur-md shadow-lg p-6 transition-all duration-300 hover:shadow-pink-200"
+              style={{ minHeight: 370 }}
+            >
+              <Wallet className="absolute top-5 right-5 text-pink-400/80 w-7 h-7" />
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-semibold text-lg text-gray-800">Funds Distributed by Scheme</h2>
+                <div className="flex gap-2 flex-wrap">
+                  {schemeFilters.map(filter => (
+                    activeFilters.includes(filter.key) ? (
+                      <Badge
+                        key={filter.key}
+                        className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium cursor-pointer bg-opacity-80"
+                        style={{ background: filter.color, color: '#333' }}
                       >
-                        {schemeData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value) => [`${value}%`, "Percentage"]}
-                        contentStyle={{
-                          borderRadius: "6px",
-                          border: "1px solid #e5e7eb",
-                          boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-                        }}
-                      />
-                      <Legend
-                        layout="horizontal"
-                        verticalAlign="bottom"
-                        align="center"
-                        iconType="circle"
-                        iconSize={8}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                        {filter.label}
+                        <button
+                          className="ml-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+                          onClick={() => setActiveFilters(activeFilters.filter(f => f !== filter.key))}
+                          aria-label={`Remove ${filter.label}`}
+                          type="button"
+                        >
+                          ×
+                        </button>
+                      </Badge>
+                    ) : (
+                      <Badge
+                        key={filter.key}
+                        className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium cursor-pointer border border-dashed border-gray-300 bg-white/60 hover:bg-opacity-90"
+                        style={{ color: filter.color }}
+                        onClick={() => setActiveFilters([...activeFilters, filter.key])}
+                      >
+                        {filter.label}
+                      </Badge>
+                    )
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="relative h-[240px] w-full flex items-center justify-center">
+                <Pie data={donutChartData} options={donutChartOptions} />
+                {/* Center text overlay */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-xs text-gray-500 mb-1">Total Distributed</span>
+                  <span className="font-bold text-2xl text-gray-800">₹{totalDistributed}Cr</span>
+                </div>
+              </div>
+            </motion.div>
           </div>
 
           {/* Tables */}
