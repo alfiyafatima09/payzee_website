@@ -255,7 +255,7 @@ export default function SchemesPage() {
   
   return (
     <div className={`${inter.className} min-h-screen bg-white flex`}>
-      <Sidebar pathname="/schemes" isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
+      {/*<Sidebar pathname="/schemes" isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />*/}
 
       {/* Main content */}
       <div
@@ -374,7 +374,8 @@ export default function SchemesPage() {
                   <TableHead className="font-semibold text-xs uppercase">Status</TableHead>
                   <TableHead className="font-semibold text-xs uppercase text-right">Actions</TableHead>
                 </TableRow>
-              </TableHeader>              <TableBody>
+              </TableHeader>
+              <TableBody>
                 {filteredSchemes.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-gray-500">

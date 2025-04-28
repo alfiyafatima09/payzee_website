@@ -247,66 +247,12 @@ export default function TransactionsPage() {
   // Get unique regions for filter
   const regions = [...new Set(transactions.map((transaction) => transaction.region))]
 
-  const sidebarItems = [
-    { name: "Dashboard", icon: Home, active: false, href: "/" },
-    { name: "Schemes", icon: BarChart3, active: false, href: "/schemes" },
-    { name: "Beneficiaries", icon: Users, active: false, href: "/beneficiaries" },
-    { name: "Vendors", icon: Store, active: false, href: "/vendors" },
-    { name: "Transactions", icon: CreditCard, active: true, href: "/transactions" },
-    { name: "Settings", icon: Settings, active: false, href: "/settings" },
-  ]
+
 
   return (
     <div className={`${inter.className} min-h-screen bg-white flex`}>
       {/* Sidebar for desktop */}
-      <aside
-        className={`fixed inset-y-0 z-20 flex h-full flex-col border-r bg-white transition-all duration-300 ${
-          isCollapsed ? "w-[70px]" : "w-[240px]"
-        } hidden md:flex`}
-      >
-        <div className="flex h-14 items-center border-b px-3">
-          <div className={`flex items-center gap-2 ${isCollapsed ? "justify-center w-full" : ""}`}>
-            {!isCollapsed && <span className="font-semibold text-lg">PayZee</span>}
-            {isCollapsed && <span className="font-bold text-lg">PZ</span>}
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`ml-auto ${isCollapsed ? "hidden" : ""}`}
-            onClick={() => setIsCollapsed(true)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-            <span className="sr-only">Collapse sidebar</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`ml-auto ${!isCollapsed ? "hidden" : ""}`}
-            onClick={() => setIsCollapsed(false)}
-          >
-            <ChevronRight className="h-4 w-4" />
-            <span className="sr-only">Expand sidebar</span>
-          </Button>
-        </div>
-        <nav className="flex-1 overflow-auto py-4">
-          <ul className="grid gap-1 px-2">
-            {sidebarItems.map((item) => (
-              <li key={item.name}>
-                <Link
-                  href={item.href}
-                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                    item.active ? "bg-black text-white" : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  <item.icon className={`h-4 w-4 ${isCollapsed ? "mx-auto" : ""}`} />
-                  {!isCollapsed && <span>{item.name}</span>}
-                  {isCollapsed && <span className="sr-only">{item.name}</span>}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </aside>
+
 
       {/* Mobile sidebar */}
       <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
@@ -320,24 +266,6 @@ export default function TransactionsPage() {
               <span className="sr-only">Close sidebar</span>
             </Button>
           </div>
-          <nav className="flex-1 overflow-auto py-4">
-            <ul className="grid gap-1 px-2">
-              {sidebarItems.map((item) => (
-                <li key={item.name}>
-                  <Link
-                    href={item.href}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                      item.active ? "bg-black text-white" : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                    onClick={() => setIsMobileOpen(false)}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.name}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
         </SheetContent>
       </Sheet>
 

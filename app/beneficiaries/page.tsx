@@ -170,7 +170,7 @@ export default function BeneficiariesPage() {
   
   return (
     <div className={`${inter.className} min-h-screen bg-white flex`}>
-      <Sidebar pathname="/beneficiaries" isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
+      {/*<Sidebar pathname="/beneficiaries" isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />*/}
 
       {/* Main content */}
       <div className="flex-1 md:ml-[240px] transition-all duration-300">
