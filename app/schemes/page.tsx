@@ -53,6 +53,7 @@ export default function SchemesPage() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState("all")
+  const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
@@ -199,12 +200,21 @@ export default function SchemesPage() {
       createdAt: "15 Sep 2021",
     },
   ]
-
-  // Filter schemes based on status
-  const filteredSchemes =
-    statusFilter === "all"
-      ? schemes
-      : schemes.filter((scheme) => scheme.status.toLowerCase() === statusFilter.toLowerCase())
+  // Filter schemes based on status and search query
+  const filteredSchemes = schemes
+    .filter((scheme) => 
+      statusFilter === "all" || scheme.status.toLowerCase() === statusFilter.toLowerCase())
+    .filter((scheme) => {
+      if (!searchQuery) return true;
+      
+      const query = searchQuery.toLowerCase();
+      return (
+        scheme.name.toLowerCase().includes(query) ||
+        scheme.description.toLowerCase().includes(query) ||
+        scheme.targetGroup.toLowerCase().includes(query) ||
+        (scheme.eligibility.tags && scheme.eligibility.tags.some(tag => tag.toLowerCase().includes(query)))
+      );
+    });
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredSchemes.length / itemsPerPage)
@@ -425,18 +435,34 @@ export default function SchemesPage() {
                   <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="relative w-full sm:w-auto">
+            </div>            <div className="relative w-full sm:w-auto">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
               <Input
                 type="search"
                 placeholder="Search Schemes..."
                 className="pl-8 w-full sm:w-[300px] bg-gray-50 border-gray-200"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1); // Reset to first page on search
+                }}
               />
+              {searchQuery && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-0 top-0 h-full"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setCurrentPage(1);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Clear search</span>
+                </Button>
+              )}
             </div>
-          </div>
-
-          {/* Schemes table */}
+          </div>          {/* Schemes table */}
           <div className="border rounded-lg shadow-sm overflow-hidden mb-6">
             <Table>
               <TableHeader className="bg-[#F5F5F5]">
@@ -448,10 +474,15 @@ export default function SchemesPage() {
                   <TableHead className="font-semibold text-xs uppercase">Status</TableHead>
                   <TableHead className="font-semibold text-xs uppercase text-right">Actions</TableHead>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredSchemes.map((scheme) => (
-                  <TableRow
+              </TableHeader>              <TableBody>
+                {filteredSchemes.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                      No schemes found{searchQuery ? ` matching "${searchQuery}"` : ''}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredSchemes.map((scheme) => (                  <TableRow
                     key={scheme.id}
                     className="hover:bg-[#EEEEEE] transition-colors cursor-pointer"
                     onClick={() => (window.location.href = `/schemes/${scheme.id}`)}
@@ -480,7 +511,7 @@ export default function SchemesPage() {
                           className="h-8 w-8 text-gray-500 hover:text-[#2563EB]"
                           onClick={(e) => {
                             e.stopPropagation()
-                            (window.location.href = `/schemes/${scheme.id}`)
+                            window.location.href = `/schemes/${scheme.id}`
                           }}
                         >
                           <Edit className="h-4 w-4" />
@@ -501,54 +532,54 @@ export default function SchemesPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                )))}
               </TableBody>
             </Table>
-          </div>
-
-          {/* Pagination */}
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious 
-                  href="#" 
-                  onClick={(e) => {
-                    e.preventDefault()
-                    if (currentPage > 1) handlePageChange(currentPage - 1)
-                  }}
-                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                />
-              </PaginationItem>
-              {getPageNumbers().map((page, index) => (
-                <PaginationItem key={index}>
-                  {page === '...' ? (
-                    <PaginationEllipsis />
-                  ) : (
-                    <PaginationLink
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        handlePageChange(page as number)
-                      }}
-                      isActive={currentPage === page}
-                    >
-                      {page}
-                    </PaginationLink>
-                  )}
+          </div>          {/* Pagination - only show when there are results */}
+          {filteredSchemes.length > 0 && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault()
+                      if (currentPage > 1) handlePageChange(currentPage - 1)
+                    }}
+                    className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                  />
                 </PaginationItem>
-              ))}
-              <PaginationItem>
-                <PaginationNext 
-                  href="#" 
-                  onClick={(e) => {
-                    e.preventDefault()
-                    if (currentPage < totalPages) handlePageChange(currentPage + 1)
-                  }}
-                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+                {getPageNumbers().map((page, index) => (
+                  <PaginationItem key={index}>
+                    {page === '...' ? (
+                      <PaginationEllipsis />
+                    ) : (
+                      <PaginationLink
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          handlePageChange(page as number)
+                        }}
+                        isActive={currentPage === page}
+                      >
+                        {page}
+                      </PaginationLink>
+                    )}
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault()
+                      if (currentPage < totalPages) handlePageChange(currentPage + 1)
+                    }}
+                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
         </main>
       </div>
     </div>
