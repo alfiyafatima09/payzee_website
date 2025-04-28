@@ -116,7 +116,128 @@ export default function TransactionsPage() {
       date: "28 Jan 2023",
       status: "Success",
     },
+    {
+      id: "TXN-2023-008",
+      senderId: "SND-008",
+      receiverId: "RCV-008",
+      amount: "₹4,200",
+      region: "East",
+      date: "30 Jan 2023",
+      status: "Success",
+    },
+    {
+      id: "TXN-2023-009",
+      senderId: "SND-009",
+      receiverId: "RCV-009",
+      amount: "₹3,800",
+      region: "West",
+      date: "02 Feb 2023",
+      status: "Success",
+    },
+    {
+      id: "TXN-2023-010",
+      senderId: "SND-010",
+      receiverId: "RCV-010",
+      amount: "₹2,900",
+      region: "Central",
+      date: "05 Feb 2023",
+      status: "Success",
+    },
+    {
+      id: "TXN-2023-011",
+      senderId: "SND-011",
+      receiverId: "RCV-011",
+      amount: "₹5,500",
+      region: "North",
+      date: "08 Feb 2023",
+      status: "Success",
+    },
+    {
+      id: "TXN-2023-012",
+      senderId: "SND-012",
+      receiverId: "RCV-012",
+      amount: "₹3,100",
+      region: "South",
+      date: "10 Feb 2023",
+      status: "Success",
+    },
+    {
+      id: "TXN-2023-013",
+      senderId: "SND-013",
+      receiverId: "RCV-013",
+      amount: "₹4,800",
+      region: "East",
+      date: "12 Feb 2023",
+      status: "Success",
+    },
+    {
+      id: "TXN-2023-014",
+      senderId: "SND-014",
+      receiverId: "RCV-014",
+      amount: "₹2,700",
+      region: "West",
+      date: "15 Feb 2023",
+      status: "Success",
+    },
+    {
+      id: "TXN-2023-015",
+      senderId: "SND-015",
+      receiverId: "RCV-015",
+      amount: "₹3,900",
+      region: "Central",
+      date: "18 Feb 2023",
+      status: "Success",
+    }
   ]
+
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  // Calculate pagination
+  const totalPages = Math.ceil(transactions.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentTransactions = transactions.slice(startIndex, endIndex)
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  // Generate page numbers
+  const getPageNumbers = () => {
+    const pageNumbers = []
+    const maxVisiblePages = 5
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i)
+      }
+    } else {
+      const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
+      const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+
+      if (startPage > 1) {
+        pageNumbers.push(1)
+        if (startPage > 2) {
+          pageNumbers.push('...')
+        }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i)
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pageNumbers.push('...')
+        }
+        pageNumbers.push(totalPages)
+      }
+    }
+
+    return pageNumbers
+  }
 
   // Filter transactions based on region
   const filteredTransactions =
@@ -317,7 +438,7 @@ export default function TransactionsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTransactions.map((transaction) => (
+                {currentTransactions.map((transaction) => (
                   <TableRow key={transaction.id} className="hover:bg-[#EEEEEE] transition-colors">
                     <TableCell className="font-medium py-4">{transaction.id}</TableCell>
                     <TableCell className="py-4">{transaction.senderId}</TableCell>
@@ -340,21 +461,42 @@ export default function TransactionsPage() {
           <Pagination>
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious href="#" />
+                <PaginationPrevious 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (currentPage > 1) handlePageChange(currentPage - 1)
+                  }}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                />
               </PaginationItem>
+              {getPageNumbers().map((page, index) => (
+                <PaginationItem key={index}>
+                  {page === '...' ? (
+                    <PaginationEllipsis />
+                  ) : (
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handlePageChange(page as number)
+                      }}
+                      isActive={currentPage === page}
+                    >
+                      {page}
+                    </PaginationLink>
+                  )}
+                </PaginationItem>
+              ))}
               <PaginationItem>
-                <PaginationLink href="#" isActive>
-                  1
-                </PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#">2</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationEllipsis />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext href="#" />
+                <PaginationNext 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (currentPage < totalPages) handlePageChange(currentPage + 1)
+                  }}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                />
               </PaginationItem>
             </PaginationContent>
           </Pagination>

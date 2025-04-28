@@ -53,6 +53,8 @@ export default function VendorsPage() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState("all")
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   // Sample data for vendors
   const vendors = [
@@ -112,6 +114,54 @@ export default function VendorsPage() {
       location: "Chennai",
       status: "Active",
     },
+    {
+      id: 8,
+      name: "Edu Materials Inc.",
+      merchantId: "VEN-2023-005",
+      region: "Central",
+      location: "Bhopal",
+      status: "Active",
+    },
+    {
+      id: 9,
+      name: "Green Farms Cooperative",
+      merchantId: "VEN-2023-006",
+      region: "North",
+      location: "Chandigarh",
+      status: "Inactive",
+    },
+    {
+      id: 10,
+      name: "Digital Solutions Hub",
+      merchantId: "VEN-2023-007",
+      region: "South",
+      location: "Chennai",
+      status: "Active",
+    },
+    {
+      id: 11,
+      name: "Edu Materials Inc.",
+      merchantId: "VEN-2023-005",
+      region: "Central",
+      location: "Bhopal",
+      status: "Active",
+    },
+    {
+      id: 12,
+      name: "Green Farms Cooperative",
+      merchantId: "VEN-2023-006",
+      region: "North",
+      location: "Chandigarh",
+      status: "Inactive",
+    },
+    {
+      id: 13,
+      name: "Digital Solutions Hub",
+      merchantId: "VEN-2023-007",
+      region: "South",
+      location: "Chennai",
+      status: "Active",
+    },
   ]
 
   // Filter vendors based on status
@@ -119,6 +169,52 @@ export default function VendorsPage() {
     statusFilter === "all"
       ? vendors
       : vendors.filter((vendor) => vendor.status.toLowerCase() === statusFilter.toLowerCase())
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredVendors.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentVendors = filteredVendors.slice(startIndex, endIndex)
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  // Generate page numbers
+  const getPageNumbers = () => {
+    const pageNumbers = []
+    const maxVisiblePages = 5
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i)
+      }
+    } else {
+      const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
+      const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+
+      if (startPage > 1) {
+        pageNumbers.push(1)
+        if (startPage > 2) {
+          pageNumbers.push('...')
+        }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i)
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pageNumbers.push('...')
+        }
+        pageNumbers.push(totalPages)
+      }
+    }
+
+    return pageNumbers
+  }
 
   const sidebarItems = [
     { name: "Dashboard", icon: Home, active: false, href: "/" },
@@ -318,7 +414,7 @@ export default function VendorsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredVendors.map((vendor) => (
+                {currentVendors.map((vendor) => (
                   <TableRow key={vendor.id} className="hover:bg-[#EEEEEE] transition-colors">
                     <TableCell className="font-medium py-4">{vendor.name}</TableCell>
                     <TableCell className="py-4">{vendor.merchantId}</TableCell>
@@ -358,21 +454,42 @@ export default function VendorsPage() {
           <Pagination>
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious href="#" />
+                <PaginationPrevious 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (currentPage > 1) handlePageChange(currentPage - 1)
+                  }}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                />
               </PaginationItem>
+              {getPageNumbers().map((page, index) => (
+                <PaginationItem key={index}>
+                  {page === '...' ? (
+                    <PaginationEllipsis />
+                  ) : (
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handlePageChange(page as number)
+                      }}
+                      isActive={currentPage === page}
+                    >
+                      {page}
+                    </PaginationLink>
+                  )}
+                </PaginationItem>
+              ))}
               <PaginationItem>
-                <PaginationLink href="#" isActive>
-                  1
-                </PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#">2</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationEllipsis />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext href="#" />
+                <PaginationNext 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (currentPage < totalPages) handlePageChange(currentPage + 1)
+                  }}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                />
               </PaginationItem>
             </PaginationContent>
           </Pagination>
