@@ -66,17 +66,18 @@ const inter = Inter({ subsets: ['latin'] });
 export default function VendorsPage() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Sample data for vendors
+  // Sample data for vendors with multiple categories
   const vendors = [
     {
       id: 1,
       name: 'Agro Solutions Ltd.',
       merchantId: 'VEN-2023-001',
-      region: 'North',
+      categories: ['Agriculture', 'Rural', 'Farmers'],
       location: 'Delhi',
       status: 'Active',
     },
@@ -84,7 +85,7 @@ export default function VendorsPage() {
       id: 2,
       name: 'Rural Supplies Co.',
       merchantId: 'VEN-2023-002',
-      region: 'South',
+      categories: ['Rural', 'Poverty'],
       location: 'Bangalore',
       status: 'Active',
     },
@@ -92,7 +93,7 @@ export default function VendorsPage() {
       id: 3,
       name: 'Tech Village Pvt. Ltd.',
       merchantId: 'VEN-2023-003',
-      region: 'West',
+      categories: ['Technology', 'Digital', 'Literacy'],
       location: 'Mumbai',
       status: 'Active',
     },
@@ -100,7 +101,7 @@ export default function VendorsPage() {
       id: 4,
       name: 'Health First Services',
       merchantId: 'VEN-2023-004',
-      region: 'East',
+      categories: ['Health', 'Insurance', 'Medical'],
       location: 'Kolkata',
       status: 'Inactive',
     },
@@ -108,7 +109,7 @@ export default function VendorsPage() {
       id: 5,
       name: 'Edu Materials Inc.',
       merchantId: 'VEN-2023-005',
-      region: 'Central',
+      categories: ['Education', 'Children'],
       location: 'Bhopal',
       status: 'Active',
     },
@@ -116,7 +117,7 @@ export default function VendorsPage() {
       id: 6,
       name: 'Green Farms Cooperative',
       merchantId: 'VEN-2023-006',
-      region: 'North',
+      categories: ['Farmers', 'Agriculture'],
       location: 'Chandigarh',
       status: 'Inactive',
     },
@@ -124,68 +125,76 @@ export default function VendorsPage() {
       id: 7,
       name: 'Digital Solutions Hub',
       merchantId: 'VEN-2023-007',
-      region: 'South',
+      categories: ['Digital', 'Technology', 'Literacy'],
       location: 'Chennai',
       status: 'Active',
     },
     {
       id: 8,
-      name: 'Edu Materials Inc.',
-      merchantId: 'VEN-2023-005',
-      region: 'Central',
+      name: 'Women Empowerment Trust',
+      merchantId: 'VEN-2023-008',
+      categories: ['Women', 'Employment'],
       location: 'Bhopal',
       status: 'Active',
     },
     {
       id: 9,
-      name: 'Green Farms Cooperative',
-      merchantId: 'VEN-2023-006',
-      region: 'North',
+      name: 'Youth Skills Academy',
+      merchantId: 'VEN-2023-009',
+      categories: ['Youth', 'Skills', 'Training'],
       location: 'Chandigarh',
       status: 'Inactive',
     },
     {
       id: 10,
-      name: 'Digital Solutions Hub',
-      merchantId: 'VEN-2023-007',
-      region: 'South',
+      name: 'Direct Benefit Transfer Services',
+      merchantId: 'VEN-2023-010',
+      categories: ['Direct-transfer', 'Poverty'],
       location: 'Chennai',
       status: 'Active',
     },
     {
       id: 11,
-      name: 'Edu Materials Inc.',
-      merchantId: 'VEN-2023-005',
-      region: 'Central',
+      name: 'Poverty Alleviation Initiative',
+      merchantId: 'VEN-2023-011',
+      categories: ['Poverty', 'Rural', 'Employment'],
       location: 'Bhopal',
       status: 'Active',
     },
     {
       id: 12,
-      name: 'Green Farms Cooperative',
-      merchantId: 'VEN-2023-006',
-      region: 'North',
+      name: 'Startup Incubator Network',
+      merchantId: 'VEN-2023-012',
+      categories: ['Startups', 'Business', 'Entrepreneurs'],
       location: 'Chandigarh',
       status: 'Inactive',
     },
     {
       id: 13,
-      name: 'Digital Solutions Hub',
-      merchantId: 'VEN-2023-007',
-      region: 'South',
+      name: 'Children Welfare Society',
+      merchantId: 'VEN-2023-013',
+      categories: ['Children', 'Education', 'Health'],
       location: 'Chennai',
       status: 'Active',
     },
   ];
 
-  // Filter vendors based on status
-  const filteredVendors =
-    statusFilter === 'all'
-      ? vendors
-      : vendors.filter(
-          (vendor) =>
-            vendor.status.toLowerCase() === statusFilter.toLowerCase(),
-        );
+  // Get all unique categories
+  const allCategories = Array.from(
+    new Set(vendors.flatMap((vendor) => vendor.categories)),
+  ).sort();
+
+  // Filter vendors based on status and category
+  const filteredVendors = vendors.filter((vendor) => {
+    const statusMatch =
+      statusFilter === 'all' ||
+      vendor.status.toLowerCase() === statusFilter.toLowerCase();
+
+    const categoryMatch =
+      categoryFilter === 'all' || vendor.categories.includes(categoryFilter);
+
+    return statusMatch && categoryMatch;
+  });
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredVendors.length / itemsPerPage);
@@ -261,7 +270,7 @@ export default function VendorsPage() {
       </Sheet>
 
       {/* Main content */}
-      <div className={`flex-1 transition-all duration-300`}>
+      <div className="flex-1 transition-all duration-300">
         {/* Top navbar */}
         <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-white px-4 sm:px-6">
           <Button
@@ -335,9 +344,15 @@ export default function VendorsPage() {
 
           {/* Search and filter section */}
           <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Filter className="h-4 w-4 text-gray-500" />
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => {
+                  setStatusFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
                 <SelectTrigger className="w-[180px] border-gray-200 bg-gray-50">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
@@ -345,6 +360,26 @@ export default function VendorsPage() {
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={categoryFilter}
+                onValueChange={(value) => {
+                  setCategoryFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[180px] border-gray-200 bg-gray-50">
+                  <SelectValue placeholder="Filter by category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {allCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -367,10 +402,10 @@ export default function VendorsPage() {
                     Vendor Name
                   </TableHead>
                   <TableHead className="text-xs font-semibold uppercase">
-                    Merchant ID
+                    Vendor ID
                   </TableHead>
                   <TableHead className="text-xs font-semibold uppercase">
-                    Region
+                    Categories
                   </TableHead>
                   <TableHead className="text-xs font-semibold uppercase">
                     Location
@@ -393,7 +428,19 @@ export default function VendorsPage() {
                       {vendor.name}
                     </TableCell>
                     <TableCell className="py-4">{vendor.merchantId}</TableCell>
-                    <TableCell className="py-4">{vendor.region}</TableCell>
+                    <TableCell className="py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {vendor.categories.map((category, index) => (
+                          <Badge
+                            key={index}
+                            variant="outline"
+                            className="border-blue-200 bg-blue-50 text-blue-700"
+                          >
+                            {category}
+                          </Badge>
+                        ))}
+                      </div>
+                    </TableCell>
                     <TableCell className="py-4">{vendor.location}</TableCell>
                     <TableCell className="py-4">
                       <Badge
