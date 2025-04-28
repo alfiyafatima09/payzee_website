@@ -12,6 +12,7 @@ import {
   Store,
   CreditCard,
   Settings,
+  FileText,
   LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ export function Sidebar({
   const mobileOpen = setIsMobileOpen ? isMobileOpen : internalMobileOpen;
   const handleMobileOpenChange = setIsMobileOpen || setInternalMobileOpen;
 
+  // Update the SidebarItem array in components/sidebar.tsx
   const sidebarItems: SidebarItem[] = [
     { name: 'Dashboard', icon: Home, active: pathname === '/', href: '/' },
     {
@@ -49,6 +51,12 @@ export function Sidebar({
       icon: BarChart3,
       active: pathname.startsWith('/schemes'),
       href: '/schemes',
+    },
+    {
+      name: 'Applications',
+      icon: FileText, // You'll need to import this icon
+      active: pathname.startsWith('/applications'),
+      href: '/applications',
     },
     {
       name: 'Beneficiaries',
@@ -80,11 +88,10 @@ export function Sidebar({
     <>
       {/* Sidebar for desktop */}
       <aside
-        className={`fixed inset-y-0 z-20 flex h-full flex-col border-r bg-white transition-all duration-300 ${
+        className={`relative flex min-h-full flex-col border-r bg-white transition-all duration-300 ${
           isCollapsed ? 'w-[70px]' : 'w-[240px]'
         } hidden md:flex`}
       >
-        {' '}
         <div className="flex h-14 items-center border-b px-3">
           <div
             className={`flex items-center gap-2 ${isCollapsed ? 'w-full justify-center' : ''}`}

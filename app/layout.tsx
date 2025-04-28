@@ -15,9 +15,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <body className="flex">
         <SidebarWrapper />
-        {children}
+        <main className="flex-1">{children}</main>
       </body>
     </html>
   );

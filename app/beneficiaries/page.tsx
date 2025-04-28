@@ -200,7 +200,7 @@ export default function BeneficiariesPage() {
 
       {/* Main content */}
 
-      <div className="flex-1 transition-all duration-300 md:ml-[240px]">
+      <div className="flex-1 transition-all duration-300">
         {/* Top navbar */}
         <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-white px-4 sm:px-6">
           <Button

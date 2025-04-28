@@ -1,12 +1,12 @@
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Loading() {
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-white">
       {/* Main content */}
-      <div className="flex-1 ml-0 md:ml-[240px]">
+      <div className="ml-0 flex-1">
         {/* Top navbar skeleton */}
-        <div className="h-14 border-b bg-white px-4 sm:px-6 flex items-center justify-between">
+        <div className="flex h-14 items-center justify-between border-b bg-white px-4 sm:px-6">
           <Skeleton className="h-8 w-40" />
           <div className="flex items-center gap-4">
             <Skeleton className="h-8 w-8 rounded-full" />
@@ -16,7 +16,7 @@ export default function Loading() {
         {/* Content skeleton */}
         <div className="p-4 sm:p-6">
           {/* Top section */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+          <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div className="flex items-center gap-2">
               <Skeleton className="h-9 w-36" />
               <Skeleton className="h-8 w-48" />
@@ -25,13 +25,13 @@ export default function Loading() {
           </div>
 
           {/* Scheme details card skeleton */}
-          <div className="border rounded-lg shadow-sm p-6 mb-6">
+          <div className="mb-6 rounded-lg border p-6 shadow-sm">
             <div className="mb-4">
-              <Skeleton className="h-7 w-40 mb-2" />
+              <Skeleton className="mb-2 h-7 w-40" />
               <Skeleton className="h-5 w-24" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Left column */}
               <div className="space-y-6">
                 <div className="space-y-2">
@@ -55,8 +55,8 @@ export default function Loading() {
               {/* Right column */}
               <div className="space-y-6">
                 <div>
-                  <Skeleton className="h-6 w-36 mb-4" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Skeleton className="mb-4 h-6 w-36" />
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {Array(8)
                       .fill(null)
                       .map((_, index) => (
@@ -67,7 +67,7 @@ export default function Loading() {
                       ))}
                   </div>
                   <div className="mt-6">
-                    <Skeleton className="h-5 w-12 mb-2" />
+                    <Skeleton className="mb-2 h-5 w-12" />
                     <div className="flex flex-wrap gap-2">
                       {Array(5)
                         .fill(null)
@@ -83,5 +83,5 @@ export default function Loading() {
         </div>
       </div>
     </div>
-  )
+  );
 }
