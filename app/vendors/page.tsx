@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import {
   BarChart3,
   Bell,
@@ -55,6 +55,7 @@ export default function VendorsPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   // Sample data for vendors
   const vendors = [
@@ -224,6 +225,8 @@ export default function VendorsPage() {
     { name: "Transactions", icon: CreditCard, active: false, href: "/transactions" },
     { name: "Settings", icon: Settings, active: false, href: "/settings" },
   ]
+
+  const tableRef = useRef<HTMLTableElement>(null)
 
   return (
     <div className={`${inter.className} min-h-screen bg-white flex`}>
@@ -402,7 +405,7 @@ export default function VendorsPage() {
 
           {/* Vendors table */}
           <div className="border rounded-lg shadow-sm overflow-hidden mb-6">
-            <Table>
+            <Table ref={tableRef}>
               <TableHeader className="bg-[#F5F5F5]">
                 <TableRow>
                   <TableHead className="font-semibold text-xs uppercase">Vendor Name</TableHead>

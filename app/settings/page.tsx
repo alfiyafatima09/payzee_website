@@ -47,6 +47,7 @@ const inter = Inter({ subsets: ["latin"] })
 export default function SettingsPage() {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [isCollapsed,setIsCollapsed] = useState(false)
 
   return (
     <div className={`${inter.className} min-h-screen bg-white flex`}>

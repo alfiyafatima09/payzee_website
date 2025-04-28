@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import {
   Bell,
   Edit,
@@ -251,6 +251,8 @@ export default function SchemesPage() {
     }    return pageNumbers
   }
   
+  const tableRef = useRef<HTMLTableElement>(null);
+  
   return (
     <div className={`${inter.className} min-h-screen bg-white flex`}>
       <Sidebar pathname="/schemes" isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
@@ -362,7 +364,7 @@ export default function SchemesPage() {
             </div>
           </div>          {/* Schemes table */}
           <div className="border rounded-lg shadow-sm overflow-hidden mb-6">
-            <Table>
+            <Table ref={tableRef}>
               <TableHeader className="bg-[#F5F5F5]">
                 <TableRow>
                   <TableHead className="font-semibold text-xs uppercase">Scheme Name</TableHead>

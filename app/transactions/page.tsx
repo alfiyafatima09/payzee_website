@@ -50,6 +50,7 @@ const inter = Inter({ subsets: ["latin"] })
 export default function TransactionsPage() {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [regionFilter, setRegionFilter] = useState("all")
+  const [isCollapsed,setIsCollapsed] = useState(false)
 
   // Sample data for transactions
   const transactions = [
