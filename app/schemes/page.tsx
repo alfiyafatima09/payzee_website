@@ -123,10 +123,10 @@ export default function SchemesPage() {
   const sidebarItems = [
     { name: "Dashboard", icon: Home, active: false, href: "/" },
     { name: "Schemes", icon: BarChart3, active: true, href: "/schemes" },
-    { name: "Beneficiaries", icon: Users, active: false, href: "#" },
-    { name: "Vendors", icon: Store, active: false, href: "#" },
-    { name: "Transactions", icon: CreditCard, active: false, href: "#" },
-    { name: "Settings", icon: Settings, active: false, href: "#" },
+    { name: "Beneficiaries", icon: Users, active: false, href: "/beneficiaries" },
+    { name: "Vendors", icon: Store, active: false, href: "/vendors" },
+    { name: "Transactions", icon: CreditCard, active: false, href: "/transactions" },
+    { name: "Settings", icon: Settings, active: false, href: "/settings" },
   ]
 
   return (

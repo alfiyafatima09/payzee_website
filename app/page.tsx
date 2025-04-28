@@ -95,12 +95,12 @@ export default function Dashboard() {
   ]
 
   const sidebarItems = [
-    { name: "Dashboard", icon: Home, active: true },
-    { name: "Schemes", icon: BarChart3, active: false },
-    { name: "Beneficiaries", icon: Users, active: false },
-    { name: "Vendors", icon: Store, active: false },
-    { name: "Transactions", icon: CreditCard, active: false },
-    { name: "Settings", icon: Settings, active: false },
+    { name: "Dashboard", icon: Home, active: true, path: "/" },
+    { name: "Schemes", icon: BarChart3, active: false, path: "/schemes" },
+    { name: "Beneficiaries", icon: Users, active: false, path: "/beneficiaries" },
+    { name: "Vendors", icon: Store, active: false, path: "/vendors" },
+    { name: "Transactions", icon: CreditCard, active: false, path: "/transactions" },
+    { name: "Settings", icon: Settings, active: false, path: "/settings" },
   ]
 
   return (
@@ -140,7 +140,7 @@ export default function Dashboard() {
             {sidebarItems.map((item) => (
               <li key={item.name}>
                 <Link
-                  href="#"
+                  href={item.path}
                   className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
                     item.active ? "bg-black text-white" : "text-gray-700 hover:bg-gray-100"
                   }`}
@@ -172,7 +172,7 @@ export default function Dashboard() {
               {sidebarItems.map((item) => (
                 <li key={item.name}>
                   <Link
-                    href="#"
+                    href={item.path}
                     className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
                       item.active ? "bg-black text-white" : "text-gray-700 hover:bg-gray-100"
                     }`}
