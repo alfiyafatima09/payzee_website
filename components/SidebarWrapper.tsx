@@ -1,12 +1,12 @@
-"use client"
+'use client';
 
-import { usePathname } from "next/navigation"
-import { useState } from "react"
-import { Sidebar } from "@/components/sidebar"
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+import { Sidebar } from '@/components/sidebar';
 
 export function SidebarWrapper() {
-  const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const pathname = usePathname()
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <Sidebar
@@ -14,5 +14,5 @@ export function SidebarWrapper() {
       isMobileOpen={isMobileOpen}
       setIsMobileOpen={setIsMobileOpen}
     />
-  )
+  );
 }

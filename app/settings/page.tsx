@@ -1,6 +1,6 @@
-"use client"
+'use client';
 
-import { useState } from "react"
+import { useState } from 'react';
 import {
   BarChart3,
   Bell,
@@ -18,15 +18,22 @@ import {
   User,
   Users,
   X,
-} from "lucide-react"
-import { Inter } from "next/font/google"
-import Image from "next/image"
-import Link from "next/link"
+} from 'lucide-react';
+import { Inter } from 'next/font/google';
+import Image from 'next/image';
+import Link from 'next/link';
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,36 +41,40 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
-import { Switch } from "@/components/ui/switch"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Sidebar } from "@/components/sidebar"
-import { usePathname } from "next/navigation";
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Sidebar } from '@/components/sidebar';
+import { usePathname } from 'next/navigation';
 
-
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ['latin'] });
 
 export default function SettingsPage() {
-  const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const [isCollapsed,setIsCollapsed] = useState(false)
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div className={`${inter.className} min-h-screen bg-white flex`}>
+    <div className={`${inter.className} flex min-h-screen bg-white`}>
       {/* Sidebar for desktop */}
       {/*<Sidebar pathname="/settings" isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />*/}
 
       {/* Mobile sidebar */}
       <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
-        <SheetContent side="left" className="p-0 w-[240px]">
+        <SheetContent side="left" className="w-[240px] p-0">
           <div className="flex h-14 items-center border-b px-3">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-lg">PayZee</span>
+              <span className="text-lg font-semibold">PayZee</span>
             </div>
-            <Button variant="ghost" size="icon" className="ml-auto" onClick={() => setIsMobileOpen(false)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto"
+              onClick={() => setIsMobileOpen(false)}
+            >
               <X className="h-4 w-4" />
               <span className="sr-only">Close sidebar</span>
             </Button>
@@ -91,23 +102,28 @@ export default function SettingsPage() {
 
       {/* Main content */}
       <div
-        className={`flex-1 md:ml-[${isCollapsed ? "70px" : "240px"}] transition-all duration-300`}
-        style={{ marginLeft: isCollapsed ? "70px" : "240px" }}
+        className={`flex-1 md:ml-[${isCollapsed ? '70px' : '240px'}] transition-all duration-300`}
+        style={{ marginLeft: isCollapsed ? '70px' : '240px' }}
       >
         {/* Top navbar */}
         <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-white px-4 sm:px-6">
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMobileOpen(true)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setIsMobileOpen(true)}
+          >
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle menu</span>
           </Button>
           <div className="flex items-center gap-2 md:hidden">
-            <span className="font-semibold text-lg">PayZee</span>
+            <span className="text-lg font-semibold">PayZee</span>
           </div>
           <div className="ml-auto flex items-center gap-4">
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
               <span className="sr-only">Notifications</span>
-              <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-black text-white">
+              <Badge className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black p-0 text-white">
                 3
               </Badge>
             </Button>
@@ -154,7 +170,10 @@ export default function SettingsPage() {
                 <Lock className="h-4 w-4" />
                 Password
               </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex items-center gap-2">
+              <TabsTrigger
+                value="notifications"
+                className="flex items-center gap-2"
+              >
                 <Bell className="h-4 w-4" />
                 Notifications
               </TabsTrigger>
@@ -169,10 +188,12 @@ export default function SettingsPage() {
               <Card className="shadow-sm">
                 <CardHeader>
                   <CardTitle>Profile Settings</CardTitle>
-                  <CardDescription>Update your personal information</CardDescription>
+                  <CardDescription>
+                    Update your personal information
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex flex-col md:flex-row gap-6">
+                  <div className="flex flex-col gap-6 md:flex-row">
                     <div className="flex flex-col items-center gap-4">
                       <div className="relative">
                         <Image
@@ -191,17 +212,27 @@ export default function SettingsPage() {
                           <span className="sr-only">Change avatar</span>
                         </Button>
                       </div>
-                      <p className="text-sm text-gray-500">Upload a new avatar</p>
+                      <p className="text-sm text-gray-500">
+                        Upload a new avatar
+                      </p>
                     </div>
-                    <div className="space-y-4 flex-1">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex-1 space-y-4">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                           <Label htmlFor="first-name">First Name</Label>
-                          <Input id="first-name" placeholder="John" defaultValue="Admin" />
+                          <Input
+                            id="first-name"
+                            placeholder="John"
+                            defaultValue="Admin"
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="last-name">Last Name</Label>
-                          <Input id="last-name" placeholder="Doe" defaultValue="User" />
+                          <Input
+                            id="last-name"
+                            placeholder="Doe"
+                            defaultValue="User"
+                          />
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -215,7 +246,12 @@ export default function SettingsPage() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="role">Role</Label>
-                        <Input id="role" placeholder="Administrator" defaultValue="System Administrator" disabled />
+                        <Input
+                          id="role"
+                          placeholder="Administrator"
+                          defaultValue="System Administrator"
+                          disabled
+                        />
                       </div>
                     </div>
                   </div>
@@ -245,7 +281,9 @@ export default function SettingsPage() {
                     <Input id="new-password" type="password" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirm New Password</Label>
+                    <Label htmlFor="confirm-password">
+                      Confirm New Password
+                    </Label>
                     <Input id="confirm-password" type="password" />
                   </div>
                 </CardContent>
@@ -262,21 +300,31 @@ export default function SettingsPage() {
               <Card className="shadow-sm">
                 <CardHeader>
                   <CardTitle>Notification Settings</CardTitle>
-                  <CardDescription>Configure your notification preferences</CardDescription>
+                  <CardDescription>
+                    Configure your notification preferences
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="email-notifications">Email Notifications</Label>
-                        <p className="text-sm text-gray-500">Receive notifications via email</p>
+                        <Label htmlFor="email-notifications">
+                          Email Notifications
+                        </Label>
+                        <p className="text-sm text-gray-500">
+                          Receive notifications via email
+                        </p>
                       </div>
                       <Switch id="email-notifications" defaultChecked />
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="push-notifications">Push Notifications</Label>
-                        <p className="text-sm text-gray-500">Receive notifications in the dashboard</p>
+                        <Label htmlFor="push-notifications">
+                          Push Notifications
+                        </Label>
+                        <p className="text-sm text-gray-500">
+                          Receive notifications in the dashboard
+                        </p>
                       </div>
                       <Switch id="push-notifications" defaultChecked />
                     </div>
@@ -285,15 +333,21 @@ export default function SettingsPage() {
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
                           <Checkbox id="new-beneficiary" defaultChecked />
-                          <Label htmlFor="new-beneficiary">New Beneficiary Registration</Label>
+                          <Label htmlFor="new-beneficiary">
+                            New Beneficiary Registration
+                          </Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox id="new-vendor" defaultChecked />
-                          <Label htmlFor="new-vendor">New Vendor Registration</Label>
+                          <Label htmlFor="new-vendor">
+                            New Vendor Registration
+                          </Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox id="transaction" defaultChecked />
-                          <Label htmlFor="transaction">Transaction Alerts</Label>
+                          <Label htmlFor="transaction">
+                            Transaction Alerts
+                          </Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox id="system" defaultChecked />
@@ -316,27 +370,31 @@ export default function SettingsPage() {
               <Card className="shadow-sm">
                 <CardHeader>
                   <CardTitle>System Settings</CardTitle>
-                  <CardDescription>Configure system preferences</CardDescription>
+                  <CardDescription>
+                    Configure system preferences
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label>Theme Mode</Label>
-                      <p className="text-sm text-gray-500">Toggle between light and dark mode</p>
+                      <p className="text-sm text-gray-500">
+                        Toggle between light and dark mode
+                      </p>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button
-                        variant={isDarkMode ? "outline" : "default"}
+                        variant={isDarkMode ? 'outline' : 'default'}
                         size="sm"
-                        className={!isDarkMode ? "bg-[#2563EB]" : ""}
+                        className={!isDarkMode ? 'bg-[#2563EB]' : ''}
                         onClick={() => setIsDarkMode(false)}
                       >
                         <Sun className="mr-2 h-4 w-4" /> Light
                       </Button>
                       <Button
-                        variant={!isDarkMode ? "outline" : "default"}
+                        variant={!isDarkMode ? 'outline' : 'default'}
                         size="sm"
-                        className={isDarkMode ? "bg-[#2563EB]" : ""}
+                        className={isDarkMode ? 'bg-[#2563EB]' : ''}
                         onClick={() => setIsDarkMode(true)}
                       >
                         <Moon className="mr-2 h-4 w-4" /> Dark
@@ -347,14 +405,20 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label htmlFor="auto-logout">Auto Logout</Label>
-                        <p className="text-sm text-gray-500">Automatically log out after inactivity</p>
+                        <p className="text-sm text-gray-500">
+                          Automatically log out after inactivity
+                        </p>
                       </div>
                       <Switch id="auto-logout" defaultChecked />
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="two-factor">Two-Factor Authentication</Label>
-                        <p className="text-sm text-gray-500">Enable additional security</p>
+                        <Label htmlFor="two-factor">
+                          Two-Factor Authentication
+                        </Label>
+                        <p className="text-sm text-gray-500">
+                          Enable additional security
+                        </p>
                       </div>
                       <Switch id="two-factor" />
                     </div>
@@ -371,5 +435,5 @@ export default function SettingsPage() {
         </main>
       </div>
     </div>
-  )
+  );
 }
