@@ -1,27 +1,19 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import {
-  BarChart3,
   Bell,
-  ChevronLeft,
-  ChevronRight,
-  CreditCard,
   Edit,
   Filter,
-  Home,
   Menu,
   Plus,
   Search,
-  Settings,
-  Store,
   Trash2,
-  Users,
   X,
 } from 'lucide-react';
 import { Inter } from 'next/font/google';
 import Image from 'next/image';
-import Link from 'next/link';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -59,7 +51,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Sidebar } from '@/components/sidebar';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -68,11 +59,14 @@ export default function VendorsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [apiVendors, setApiVendors] = useState([]);
+  const [error, setError] = useState(null);
   const itemsPerPage = 10;
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Sample data for vendors with multiple categories
-  const vendors = [
+  const hardcodedVendors = [
     {
       id: 1,
       name: 'Agro Solutions Ltd.',
@@ -179,19 +173,57 @@ export default function VendorsPage() {
     },
   ];
 
+  // Fetch vendors from API
+  // Fetch vendors from API and transform the data structure
+  useEffect(() => {
+    const fetchVendors = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get(
+          'http://127.0.0.1:8000/api/v1/government/vendor-profiles',
+        );
+
+        // Transform the API data to match your expected structure
+        const transformedVendors = response.data.map((vendor) => ({
+          id: vendor.vendor_id,
+          name: vendor.account_info.business_name,
+          merchantId: vendor.vendor_id,
+          categories: [vendor.account_info.category], // Convert single category to array
+          location: vendor.account_info.location,
+          status: vendor.account_info.status,
+        }));
+
+        setApiVendors(transformedVendors);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching vendors:', err);
+        // setError('Failed to load vendors. Using fallback data.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchVendors();
+  }, []);
+  // Use API vendors if available, otherwise use hardcoded vendors
+  const vendors = apiVendors.length > 0 ? apiVendors : hardcodedVendors;
+  console.log(vendors);
+
   // Get all unique categories
   const allCategories = Array.from(
-    new Set(vendors.flatMap((vendor) => vendor.categories)),
+    new Set(vendors.flatMap((vendor) => vendor.categories || [])),
   ).sort();
 
   // Filter vendors based on status and category
   const filteredVendors = vendors.filter((vendor) => {
     const statusMatch =
       statusFilter === 'all' ||
-      vendor.status.toLowerCase() === statusFilter.toLowerCase();
+      (vendor.status &&
+        vendor.status.toLowerCase() === statusFilter.toLowerCase());
 
     const categoryMatch =
-      categoryFilter === 'all' || vendor.categories.includes(categoryFilter);
+      categoryFilter === 'all' ||
+      (vendor.categories && vendor.categories.includes(categoryFilter));
 
     return statusMatch && categoryMatch;
   });
@@ -245,7 +277,7 @@ export default function VendorsPage() {
     return pageNumbers;
   };
 
-  const tableRef = useRef<HTMLTableElement>(null);
+  const tableRef = useRef(null);
 
   return (
     <div className={`${inter.className} flex min-h-screen bg-white`}>
@@ -393,143 +425,159 @@ export default function VendorsPage() {
             </div>
           </div>
 
-          {/* Vendors table */}
-          <div className="mb-6 overflow-hidden rounded-lg border shadow-sm">
-            <Table ref={tableRef}>
-              <TableHeader className="bg-[#F5F5F5]">
-                <TableRow>
-                  <TableHead className="text-xs font-semibold uppercase">
-                    Vendor Name
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase">
-                    Vendor ID
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase">
-                    Categories
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase">
-                    Location
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase">
-                    Status
-                  </TableHead>
-                  <TableHead className="text-right text-xs font-semibold uppercase">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {currentVendors.map((vendor) => (
-                  <TableRow
-                    key={vendor.id}
-                    className="transition-colors hover:bg-[#EEEEEE]"
-                  >
-                    <TableCell className="py-4 font-medium">
-                      {vendor.name}
-                    </TableCell>
-                    <TableCell className="py-4">{vendor.merchantId}</TableCell>
-                    <TableCell className="py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {vendor.categories.map((category, index) => (
-                          <Badge
-                            key={index}
-                            variant="outline"
-                            className="border-blue-200 bg-blue-50 text-blue-700"
-                          >
-                            {category}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4">{vendor.location}</TableCell>
-                    <TableCell className="py-4">
-                      <Badge
-                        variant="outline"
-                        className={`${
-                          vendor.status === 'Active'
-                            ? 'border-green-200 bg-green-50 text-green-700'
-                            : 'border-gray-200 bg-gray-50 text-gray-700'
-                        }`}
-                      >
-                        {vendor.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-gray-500 hover:text-[#2563EB]"
-                        >
-                          <Edit className="h-4 w-4" />
-                          <span className="sr-only">Edit</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-gray-500 hover:text-red-500"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
-                      </div>
-                    </TableCell>
+          {/* Loading state */}
+          {isLoading ? (
+            <div className="flex h-64 items-center justify-center">
+              <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
+            </div>
+          ) : error ? (
+            <div className="mb-6 rounded-md border border-amber-200 bg-amber-50 p-4 text-amber-700">
+              {error}
+            </div>
+          ) : (
+            /* Vendors table */
+            <div className="mb-6 overflow-hidden rounded-lg border shadow-sm">
+              <Table ref={tableRef}>
+                <TableHeader className="bg-[#F5F5F5]">
+                  <TableRow>
+                    <TableHead className="text-xs font-semibold uppercase">
+                      Vendor Name
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold uppercase">
+                      Vendor ID
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold uppercase">
+                      Categories
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold uppercase">
+                      Location
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold uppercase">
+                      Status
+                    </TableHead>
+                    <TableHead className="text-right text-xs font-semibold uppercase">
+                      Actions
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Pagination */}
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (currentPage > 1) handlePageChange(currentPage - 1);
-                  }}
-                  className={
-                    currentPage === 1 ? 'pointer-events-none opacity-50' : ''
-                  }
-                />
-              </PaginationItem>
-              {getPageNumbers().map((page, index) => (
-                <PaginationItem key={index}>
-                  {page === '...' ? (
-                    <PaginationEllipsis />
-                  ) : (
-                    <PaginationLink
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handlePageChange(page as number);
-                      }}
-                      isActive={currentPage === page}
+                </TableHeader>
+                <TableBody>
+                  {currentVendors.map((vendor) => (
+                    <TableRow
+                      key={vendor.id}
+                      className="transition-colors hover:bg-[#EEEEEE]"
                     >
-                      {page}
-                    </PaginationLink>
-                  )}
+                      <TableCell className="py-4 font-medium">
+                        {vendor.name}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        {vendor.merchantId}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {vendor.categories &&
+                            vendor.categories.map((category, index) => (
+                              <Badge
+                                key={`${vendor.id}-${category}-${index}`}
+                                variant="outline"
+                                className="border-blue-200 bg-blue-50 text-blue-700"
+                              >
+                                {category}
+                              </Badge>
+                            ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-4">{vendor.location}</TableCell>
+                      <TableCell className="py-4">
+                        <Badge
+                          variant="outline"
+                          className={`${
+                            vendor.status === 'Active'
+                              ? 'border-green-200 bg-green-50 text-green-700'
+                              : 'border-gray-200 bg-gray-50 text-gray-700'
+                          }`}
+                        >
+                          {vendor.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-gray-500 hover:text-[#2563EB]"
+                          >
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Edit</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-gray-500 hover:text-red-500"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Delete</span>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          {/* Pagination - only show if not loading */}
+          {!isLoading && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 1) handlePageChange(currentPage - 1);
+                    }}
+                    className={
+                      currentPage === 1 ? 'pointer-events-none opacity-50' : ''
+                    }
+                  />
                 </PaginationItem>
-              ))}
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (currentPage < totalPages)
-                      handlePageChange(currentPage + 1);
-                  }}
-                  className={
-                    currentPage === totalPages
-                      ? 'pointer-events-none opacity-50'
-                      : ''
-                  }
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+                {getPageNumbers().map((page, index) => (
+                  <PaginationItem key={index}>
+                    {page === '...' ? (
+                      <PaginationEllipsis />
+                    ) : (
+                      <PaginationLink
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handlePageChange(page as number);
+                        }}
+                        isActive={currentPage === page}
+                      >
+                        {page}
+                      </PaginationLink>
+                    )}
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < totalPages)
+                        handlePageChange(currentPage + 1);
+                    }}
+                    className={
+                      currentPage === totalPages
+                        ? 'pointer-events-none opacity-50'
+                        : ''
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
         </main>
       </div>
     </div>
