@@ -51,6 +51,18 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Sidebar } from '@/components/sidebar';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -60,6 +72,14 @@ export default function SchemesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newScheme, setNewScheme] = useState({
+    name: '',
+    launchDate: new Date(),
+    targetGroup: '',
+    fundAllocated: '',
+    status: 'Active',
+  });
 
   // Sample data for schemes
   const schemes = [
@@ -336,9 +356,105 @@ export default function SchemesPage() {
           <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <h1 className="text-2xl font-semibold">Schemes</h1>
             <div className="flex flex-wrap gap-2">
-              <Button className="bg-[#2563EB] hover:bg-[#1d4ed8]">
-                <Plus className="mr-2 h-4 w-4" /> Add Scheme
-              </Button>
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-[#2563EB] hover:bg-[#1d4ed8]">
+                    <Plus className="mr-2 h-4 w-4" /> Add Scheme
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Add New Scheme</DialogTitle>
+                    <DialogDescription>
+                      Fill in the details to create a new scheme.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="name" className="text-right">
+                        Scheme Name
+                      </Label>
+                      <Input
+                        id="name"
+                        value={newScheme.name}
+                        onChange={(e) => setNewScheme({...newScheme, name: e.target.value})}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="launchDate" className="text-right">
+                        Launch Date
+                      </Label>
+                      <Calendar
+                        mode="single"
+                        selected={newScheme.launchDate}
+                        onSelect={(date) => date && setNewScheme({...newScheme, launchDate: date})}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="targetGroup" className="text-right">
+                        Target Group
+                      </Label>
+                      <Input
+                        id="targetGroup"
+                        value={newScheme.targetGroup}
+                        onChange={(e) => setNewScheme({...newScheme, targetGroup: e.target.value})}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="fundAllocated" className="text-right">
+                        Fund Allocated
+                      </Label>
+                      <Input
+                        id="fundAllocated"
+                        type="number"
+                        value={newScheme.fundAllocated}
+                        onChange={(e) => setNewScheme({...newScheme, fundAllocated: e.target.value})}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="status" className="text-right">
+                        Status
+                      </Label>
+                      <Select
+                        value={newScheme.status}
+                        onValueChange={(value) => setNewScheme({...newScheme, status: value})}
+                      >
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Active">Active</SelectItem>
+                          <SelectItem value="Inactive">Inactive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      type="submit"
+                      onClick={() => {
+                        // Here you would typically make an API call to add the scheme
+                        console.log('New scheme:', newScheme);
+                        setIsAddDialogOpen(false);
+                        // Reset form
+                        setNewScheme({
+                          name: '',
+                          launchDate: new Date(),
+                          targetGroup: '',
+                          fundAllocated: '',
+                          status: 'Active',
+                        });
+                      }}
+                    >
+                      Add Scheme
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
               <Button
                 variant="outline"
                 className="border-[#2563EB] text-[#2563EB]"

@@ -504,7 +504,7 @@ export default function Dashboard() {
                   <span className="text-2xl font-bold text-gray-800">
                     ₹{totalDistributed}Cr
                   </span>
-                </div>
+          </div>
               </div>{' '}
             </motion.div>
 
