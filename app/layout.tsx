@@ -3,9 +3,8 @@ import './globals.css';
 import { SidebarWrapper } from '@/components/SidebarWrapper';
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: 'PayZee',
+  description: 'Created by Payzee'
 };
 
 export default function RootLayout({
