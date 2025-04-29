@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   BarChart3,
   Bell,
@@ -19,6 +19,7 @@ import {
 import { Inter } from 'next/font/google';
 import Image from 'next/image';
 import Link from 'next/link';
+import axios from 'axios';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -60,149 +61,92 @@ import { Sidebar } from '@/components/sidebar';
 
 const inter = Inter({ subsets: ['latin'] });
 
+interface Transaction {
+  transaction_id: string;
+  vendor_id: string;
+  category: string;
+  user_id: string;
+  status: string;
+  timestamp: string;
+  amount: number;
+}
+
+interface UserData {
+  id: string;
+  password: string;
+  remaining_amt: number;
+  allocated_amt: number;
+  past_transactions: Transaction[];
+  govt_wallet: number;
+  personal_wallet: number;
+  account_info: {
+    phone_number: string;
+    date_created: string;
+    address: string;
+    email: string;
+    full_name: string;
+    username: string;
+    aadhaar_number: string;
+  };
+}
+
+interface TransformedTransaction {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  amount: string;
+  region: string;
+  date: string;
+  status: string;
+}
+
 export default function TransactionsPage() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [regionFilter, setRegionFilter] = useState('all');
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [apiTransactions, setApiTransactions] = useState<TransformedTransaction[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  // Sample data for transactions
-  const transactions = [
-    {
-      id: 'TXN-2023-001',
-      senderId: 'SND-001',
-      receiverId: 'RCV-001',
-      amount: '₹5,000',
-      region: 'North',
-      date: '12 Jan 2023',
-      status: 'Success',
-    },
-    {
-      id: 'TXN-2023-002',
-      senderId: 'SND-002',
-      receiverId: 'RCV-002',
-      amount: '₹2,500',
-      region: 'South',
-      date: '15 Jan 2023',
-      status: 'Success',
-    },
-    {
-      id: 'TXN-2023-003',
-      senderId: 'SND-003',
-      receiverId: 'RCV-003',
-      amount: '₹3,200',
-      region: 'East',
-      date: '18 Jan 2023',
-      status: 'Success',
-    },
-    {
-      id: 'TXN-2023-004',
-      senderId: 'SND-004',
-      receiverId: 'RCV-004',
-      amount: '₹1,800',
-      region: 'West',
-      date: '20 Jan 2023',
-      status: 'Success',
-    },
-    {
-      id: 'TXN-2023-005',
-      senderId: 'SND-005',
-      receiverId: 'RCV-005',
-      amount: '₹2,100',
-      region: 'Central',
-      date: '22 Jan 2023',
-      status: 'Success',
-    },
-    {
-      id: 'TXN-2023-006',
-      senderId: 'SND-006',
-      receiverId: 'RCV-006',
-      amount: '₹1,500',
-      region: 'North',
-      date: '25 Jan 2023',
-      status: 'Success',
-    },
-    {
-      id: 'TXN-2023-007',
-      senderId: 'SND-007',
-      receiverId: 'RCV-007',
-      amount: '₹6,400',
-      region: 'South',
-      date: '28 Jan 2023',
-      status: 'Success',
-    },
-    {
-      id: 'TXN-2023-008',
-      senderId: 'SND-008',
-      receiverId: 'RCV-008',
-      amount: '₹4,200',
-      region: 'East',
-      date: '30 Jan 2023',
-      status: 'Success',
-    },
-    {
-      id: 'TXN-2023-009',
-      senderId: 'SND-009',
-      receiverId: 'RCV-009',
-      amount: '₹3,800',
-      region: 'West',
-      date: '02 Feb 2023',
-      status: 'Success',
-    },
-    {
-      id: 'TXN-2023-010',
-      senderId: 'SND-010',
-      receiverId: 'RCV-010',
-      amount: '₹2,900',
-      region: 'Central',
-      date: '05 Feb 2023',
-      status: 'Success',
-    },
-    {
-      id: 'TXN-2023-011',
-      senderId: 'SND-011',
-      receiverId: 'RCV-011',
-      amount: '₹5,500',
-      region: 'North',
-      date: '08 Feb 2023',
-      status: 'Success',
-    },
-    {
-      id: 'TXN-2023-012',
-      senderId: 'SND-012',
-      receiverId: 'RCV-012',
-      amount: '₹3,100',
-      region: 'South',
-      date: '10 Feb 2023',
-      status: 'Success',
-    },
-    {
-      id: 'TXN-2023-013',
-      senderId: 'SND-013',
-      receiverId: 'RCV-013',
-      amount: '₹4,800',
-      region: 'East',
-      date: '12 Feb 2023',
-      status: 'Success',
-    },
-    {
-      id: 'TXN-2023-014',
-      senderId: 'SND-014',
-      receiverId: 'RCV-014',
-      amount: '₹2,700',
-      region: 'West',
-      date: '15 Feb 2023',
-      status: 'Success',
-    },
-    {
-      id: 'TXN-2023-015',
-      senderId: 'SND-015',
-      receiverId: 'RCV-015',
-      amount: '₹3,900',
-      region: 'Central',
-      date: '18 Feb 2023',
-      status: 'Success',
-    },
-  ];
+  // Fetch transactions from API
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get<Transaction[]>(
+          'http://127.0.0.1:8000/api/v1/government/transactions',
+        );
+
+        // Transform the API data to match your expected structure
+        const transformedTransactions = response.data.map((transaction) => ({
+          id: transaction.transaction_id,
+          senderId: transaction.user_id,
+          receiverId: transaction.vendor_id,
+          amount: `₹${transaction.amount}`,
+          region: transaction.category,
+          date: new Date(transaction.timestamp).toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          }),
+          status: transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1),
+        }));
+
+        setApiTransactions(transformedTransactions);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching transactions:', err);
+        setError('Failed to load transactions.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, []);
+
+  // Use API transactions if available, otherwise use hardcoded transactions
+  const transactions: TransformedTransaction[] = apiTransactions.length > 0 ? apiTransactions : [];
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;

@@ -60,7 +60,14 @@ export default function VendorsPage() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
-  const [apiVendors, setApiVendors] = useState([]);
+  const [apiVendors, setApiVendors] = useState<Array<{
+    id: string;
+    name: string;
+    merchantId: string;
+    categories: string[];
+    location: string;
+    status: string;
+  }>>([]);
   const [error, setError] = useState(null);
   const itemsPerPage = 10;
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -182,9 +189,16 @@ export default function VendorsPage() {
         const response = await axios.get(
           'http://127.0.0.1:8000/api/v1/government/vendor-profiles',
         );
-
         // Transform the API data to match your expected structure
-        const transformedVendors = response.data.map((vendor) => ({
+        const transformedVendors = (response.data as Array<{
+          vendor_id: string;
+          account_info: {
+            business_name: string;
+            category: string;
+            location: string;
+            status: string;
+          };
+        }>).map((vendor) => ({
           id: vendor.vendor_id,
           name: vendor.account_info.business_name,
           merchantId: vendor.vendor_id,
