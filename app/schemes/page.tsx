@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
 import {
   Bell,
   Edit,
@@ -41,7 +42,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
 import {
   Table,
   TableBody,
@@ -50,161 +50,111 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Sidebar } from '@/components/sidebar';
+import { useRouter } from 'next/navigation';
 
 const inter = Inter({ subsets: ['latin'] });
+
+// Define types for our API response
+interface EligibilityCriteria {
+  date_of_birth: string | null;
+  gender: string | null;
+  state: string | null;
+  district: string | null;
+  city: string | null;
+  caste: string | null;
+}
+
+interface ApiScheme {
+  scheme_name: string;
+  scheme_id: string;
+  description: string;
+  amount: number;
+  status: string;
+  created_at: string;
+  eligibility_criteria: EligibilityCriteria;
+  tags: string[];
+}
+
+// Define types for our transformed scheme data
+interface TransformedScheme {
+  id: string;
+  name: string;
+  description: string;
+  amount: number;
+  launchDate: string;
+  targetGroup: string;
+  fundAllocated: string;
+  status: string;
+  eligibility: {
+    dob: string | null;
+    gender: string | null;
+    state: string | null;
+    district: string | null;
+    income: null;
+    caste: string | null;
+    tags: string[];
+  };
+  createdAt: string;
+}
 
 export default function SchemesPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [schemes, setSchemes] = useState<TransformedScheme[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const itemsPerPage = 10;
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Sample data for schemes
-  const schemes = [
-    {
-      id: 1,
-      name: 'Direct Benefit Transfer',
-      description:
-        "Financial assistance directly transferred to beneficiaries' bank accounts",
-      amount: 5000,
-      launchDate: '12 Jan 2022',
-      targetGroup: 'Below Poverty Line',
-      fundAllocated: '₹5,000 Cr',
-      status: 'Active',
-      eligibility: {
-        dob: '01-01-1985',
-        gender: 'Any',
-        state: 'All',
-        district: 'All',
-        income: 'Below ₹2,50,000 per annum',
-        caste: 'All',
-        tags: ['poverty', 'direct-transfer'],
-      },
-      createdAt: '10 Jan 2022',
-    },
-    {
-      id: 2,
-      name: 'PM Kisan',
-      description: "Financial benefit to land holding farmers' families",
-      amount: 6000,
-      launchDate: '24 Feb 2021',
-      targetGroup: 'Farmers',
-      fundAllocated: '₹2,500 Cr',
-      status: 'Active',
-      eligibility: {
-        dob: null,
-        gender: 'Any',
-        state: 'All',
-        district: 'All',
-        income: null,
-        caste: 'All',
-        tags: ['farmers', 'agriculture'],
-      },
-      createdAt: '20 Feb 2021',
-    },
-    {
-      id: 3,
-      name: 'MGNREGA',
-      description: 'Employment guarantee scheme for rural households',
-      amount: 3500,
-      launchDate: '05 Apr 2020',
-      targetGroup: 'Rural Workers',
-      fundAllocated: '₹3,200 Cr',
-      status: 'Active',
-      eligibility: {
-        dob: null,
-        gender: 'Any',
-        state: 'All',
-        district: 'Rural',
-        income: null,
-        caste: 'All',
-        tags: ['rural', 'employment'],
-      },
-      createdAt: '01 Apr 2020',
-    },
-    {
-      id: 4,
-      name: 'Skill India',
-      description: 'Training program for skill development',
-      amount: 8000,
-      launchDate: '15 Jul 2021',
-      targetGroup: 'Youth',
-      fundAllocated: '₹1,800 Cr',
-      status: 'Inactive',
-      eligibility: {
-        dob: '01-01-1990',
-        gender: 'Any',
-        state: 'All',
-        district: 'All',
-        income: null,
-        caste: 'All',
-        tags: ['youth', 'skills', 'training'],
-      },
-      createdAt: '10 Jul 2021',
-    },
-    {
-      id: 5,
-      name: 'Digital India',
-      description: 'Initiative to promote digital literacy',
-      amount: 7500,
-      launchDate: '01 Aug 2022',
-      targetGroup: 'All Citizens',
-      fundAllocated: '₹2,100 Cr',
-      status: 'Active',
-      eligibility: {
-        dob: null,
-        gender: 'Any',
-        state: 'All',
-        district: 'All',
-        income: null,
-        caste: 'All',
-        tags: ['digital', 'literacy', 'technology'],
-      },
-      createdAt: '25 Jul 2022',
-    },
-    {
-      id: 6,
-      name: 'Startup India',
-      description: 'Program to foster entrepreneurship and startups',
-      amount: 15000,
-      launchDate: '16 Jan 2023',
-      targetGroup: 'Entrepreneurs',
-      fundAllocated: '₹1,500 Cr',
-      status: 'Inactive',
-      eligibility: {
-        dob: null,
-        gender: 'Any',
-        state: 'All',
-        district: 'All',
-        income: null,
-        caste: 'All',
-        tags: ['startups', 'business', 'entrepreneurs'],
-      },
-      createdAt: '10 Jan 2023',
-    },
-    {
-      id: 7,
-      name: 'Ayushman Bharat',
-      description: 'Health insurance scheme for low-income families',
-      amount: 5000,
-      launchDate: '23 Sep 2021',
-      targetGroup: 'Low Income Families',
-      fundAllocated: '₹6,400 Cr',
-      status: 'Active',
-      eligibility: {
-        dob: null,
-        gender: 'Any',
-        state: 'All',
-        district: 'All',
-        income: 'Below ₹5,00,000 per annum',
-        caste: 'All',
-        tags: ['health', 'insurance', 'medical'],
-      },
-      createdAt: '15 Sep 2021',
-    },
-  ];
+  // Fetch schemes from API
+  useEffect(() => {
+    const fetchSchemes = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get<ApiScheme[]>(
+          'http://127.0.0.1:8000/api/v1/government/schemes',
+        );
+
+        // Transform API data to match component structure
+        const transformedSchemes = response.data.map((scheme) => ({
+          id: scheme.scheme_id,
+          name: scheme.scheme_name,
+          description: scheme.description,
+          amount: scheme.amount,
+          launchDate: new Date(scheme.created_at).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          }),
+          targetGroup: scheme.tags?.join(', ') || 'All',
+          fundAllocated: `₹${scheme.amount.toLocaleString('en-IN')}`,
+          status: scheme.status,
+          eligibility: {
+            dob: scheme.eligibility_criteria?.date_of_birth,
+            gender: scheme.eligibility_criteria?.gender,
+            state: scheme.eligibility_criteria?.state,
+            district: scheme.eligibility_criteria?.district,
+            income: null,
+            caste: scheme.eligibility_criteria?.caste,
+            tags: scheme.tags || [],
+          },
+          createdAt: new Date(scheme.created_at).toLocaleDateString('en-IN'),
+        }));
+
+        setSchemes(transformedSchemes);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching schemes:', err);
+        setError('Failed to load schemes');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSchemes();
+  }, []);
+
   // Filter schemes based on status and search query
   const filteredSchemes = schemes
     .filter(
@@ -221,7 +171,7 @@ export default function SchemesPage() {
         scheme.description.toLowerCase().includes(query) ||
         scheme.targetGroup.toLowerCase().includes(query) ||
         (scheme.eligibility.tags &&
-          scheme.eligibility.tags.some((tag) =>
+          scheme.eligibility.tags.some((tag: string) =>
             tag.toLowerCase().includes(query),
           ))
       );
@@ -276,11 +226,10 @@ export default function SchemesPage() {
   };
 
   const tableRef = useRef<HTMLTableElement>(null);
+  const router = useRouter();
 
   return (
     <div className={`${inter.className} flex min-h-screen bg-white`}>
-      {/*<Sidebar pathname="/schemes" isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />*/}
-
       {/* Main content */}
       <div className="flex-1 transition-all duration-300">
         {/* Top navbar */}
@@ -336,7 +285,10 @@ export default function SchemesPage() {
           <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <h1 className="text-2xl font-semibold">Schemes</h1>
             <div className="flex flex-wrap gap-2">
-              <Button className="bg-[#2563EB] hover:bg-[#1d4ed8]">
+              <Button
+                className="bg-[#2563EB] hover:bg-[#1d4ed8]"
+                onClick={() => router.push('/schemes/create')}
+              >
                 <Plus className="mr-2 h-4 w-4" /> Add Scheme
               </Button>
               <Button
@@ -353,6 +305,7 @@ export default function SchemesPage() {
               </Button>
             </div>
           </div>
+
           {/* Search and filter section */}
           <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <div className="flex items-center gap-2">
@@ -367,7 +320,7 @@ export default function SchemesPage() {
                   <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
-            </div>{' '}
+            </div>
             <div className="relative w-full sm:w-auto">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
               <Input
@@ -395,161 +348,178 @@ export default function SchemesPage() {
                 </Button>
               )}
             </div>
-          </div>{' '}
-          {/* Schemes table */}
-          <div className="mb-6 overflow-hidden rounded-lg border shadow-sm">
-            <Table ref={tableRef}>
-              <TableHeader className="bg-[#F5F5F5]">
-                <TableRow>
-                  <TableHead className="text-xs font-semibold uppercase">
-                    Scheme Name
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase">
-                    Launch Date
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase">
-                    Target Group
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase">
-                    Fund Allocated
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase">
-                    Status
-                  </TableHead>
-                  <TableHead className="text-right text-xs font-semibold uppercase">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredSchemes.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="py-8 text-center text-gray-500"
-                    >
-                      No schemes found
-                      {searchQuery ? ` matching "${searchQuery}"` : ''}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredSchemes.map((scheme) => (
-                    <TableRow
-                      key={scheme.id}
-                      className="cursor-pointer transition-colors hover:bg-[#EEEEEE]"
-                      onClick={() =>
-                        (window.location.href = `/schemes/${scheme.id}`)
-                      }
-                    >
-                      <TableCell className="py-4 font-medium">
-                        {scheme.name}
-                      </TableCell>
-                      <TableCell className="py-4">
-                        {scheme.launchDate}
-                      </TableCell>
-                      <TableCell className="py-4">
-                        {scheme.targetGroup}
-                      </TableCell>
-                      <TableCell className="py-4">
-                        {scheme.fundAllocated}
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <Badge
-                          variant="outline"
-                          className={`${
-                            scheme.status === 'Active'
-                              ? 'border-green-200 bg-green-50 text-green-700'
-                              : 'border-gray-200 bg-gray-50 text-gray-700'
-                          }`}
-                        >
-                          {scheme.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-gray-500 hover:text-[#2563EB]"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.location.href = `/schemes/${scheme.id}`;
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Edit</span>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-gray-500 hover:text-red-500"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Delete functionality would go here
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Delete</span>
-                          </Button>
-                        </div>
-                      </TableCell>
+          </div>
+
+          {/* Loading state */}
+          {isLoading ? (
+            <div className="flex h-64 items-center justify-center">
+              <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
+            </div>
+          ) : error ? (
+            <div className="mb-6 rounded-md border border-amber-200 bg-amber-50 p-4 text-amber-700">
+              {error}
+            </div>
+          ) : (
+            <>
+              {/* Schemes table */}
+              <div className="mb-6 overflow-hidden rounded-lg border shadow-sm">
+                <Table ref={tableRef}>
+                  <TableHeader className="bg-[#F5F5F5]">
+                    <TableRow>
+                      <TableHead className="text-xs font-semibold uppercase">
+                        Scheme Name
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">
+                        Launch Date
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">
+                        Target Group
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">
+                        Fund Allocated
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">
+                        Status
+                      </TableHead>
+                      <TableHead className="text-right text-xs font-semibold uppercase">
+                        Actions
+                      </TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>{' '}
-          {/* Pagination - only show when there are results */}
-          {filteredSchemes.length > 0 && (
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (currentPage > 1) handlePageChange(currentPage - 1);
-                    }}
-                    className={
-                      currentPage === 1 ? 'pointer-events-none opacity-50' : ''
-                    }
-                  />
-                </PaginationItem>
-                {getPageNumbers().map((page, index) => (
-                  <PaginationItem key={index}>
-                    {page === '...' ? (
-                      <PaginationEllipsis />
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSchemes.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={6}
+                          className="py-8 text-center text-gray-500"
+                        >
+                          No schemes found
+                          {searchQuery ? ` matching "${searchQuery}"` : ''}
+                        </TableCell>
+                      </TableRow>
                     ) : (
-                      <PaginationLink
+                      currentSchemes.map((scheme) => (
+                        <TableRow
+                          key={scheme.id}
+                          className="cursor-pointer transition-colors hover:bg-[#EEEEEE]"
+                          onClick={() => router.push(`/schemes/${scheme.id}`)}
+                        >
+                          <TableCell className="py-4 font-medium">
+                            {scheme.name}
+                          </TableCell>
+                          <TableCell className="py-4">
+                            {scheme.launchDate}
+                          </TableCell>
+                          <TableCell className="py-4">
+                            {scheme.targetGroup}
+                          </TableCell>
+                          <TableCell className="py-4">
+                            {scheme.fundAllocated}
+                          </TableCell>
+                          <TableCell className="py-4">
+                            <Badge
+                              variant="outline"
+                              className={`${
+                                scheme.status === 'active'
+                                  ? 'border-green-200 bg-green-50 text-green-700'
+                                  : 'border-gray-200 bg-gray-50 text-gray-700'
+                              }`}
+                            >
+                              {scheme.status.charAt(0).toUpperCase() +
+                                scheme.status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="py-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-gray-500 hover:text-[#2563EB]"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  router.push(`/schemes/${scheme.id}`);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                                <span className="sr-only">Edit</span>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-gray-500 hover:text-red-500"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Delete functionality would go here
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Delete</span>
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination - only show when there are results */}
+              {filteredSchemes.length > 0 && (
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          handlePageChange(page as number);
+                          if (currentPage > 1)
+                            handlePageChange(currentPage - 1);
                         }}
-                        isActive={currentPage === page}
-                      >
-                        {page}
-                      </PaginationLink>
-                    )}
-                  </PaginationItem>
-                ))}
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (currentPage < totalPages)
-                        handlePageChange(currentPage + 1);
-                    }}
-                    className={
-                      currentPage === totalPages
-                        ? 'pointer-events-none opacity-50'
-                        : ''
-                    }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
+                        className={
+                          currentPage === 1
+                            ? 'pointer-events-none opacity-50'
+                            : ''
+                        }
+                      />
+                    </PaginationItem>
+                    {getPageNumbers().map((page, index) => (
+                      <PaginationItem key={index}>
+                        {page === '...' ? (
+                          <PaginationEllipsis />
+                        ) : (
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handlePageChange(page as number);
+                            }}
+                            isActive={currentPage === page}
+                          >
+                            {page}
+                          </PaginationLink>
+                        )}
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage < totalPages)
+                            handlePageChange(currentPage + 1);
+                        }}
+                        className={
+                          currentPage === totalPages
+                            ? 'pointer-events-none opacity-50'
+                            : ''
+                        }
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </>
           )}
         </main>
       </div>
