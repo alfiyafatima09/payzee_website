@@ -1,28 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
-  BarChart3,
   Bell,
-  ChevronLeft,
-  ChevronRight,
-  CreditCard,
-  Edit,
   Filter,
-  Home,
-  MapPin,
   Menu,
-  Plus,
   Search,
-  Settings,
-  Store,
-  Trash2,
-  Users,
   X,
+  Eye,
 } from 'lucide-react';
 import { Inter } from 'next/font/google';
 import Image from 'next/image';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -51,7 +41,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
 import {
   Table,
   TableBody,
@@ -60,92 +49,113 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Sidebar } from '@/components/sidebar';
 
 const inter = Inter({ subsets: ['latin'] });
 
+// Constants
+const GOVERNMENT_ID = '1b7854b9-783b-49d8-b8b3-d4e1e17106c0';
+const API_BASE_URL = 'http://localhost:8000/api/v1';
+
+// Define types for our API response
+interface AccountInfo {
+  id: string;
+  name: string;
+  email: string;
+  created_at: string;
+  updated_at: string;
+  user_type: string;
+  image_url: string;
+}
+
+interface PersonalInfo {
+  phone: string;
+  id_type: string;
+  id_number: string;
+  address: string;
+  dob: string;
+  gender: string;
+  occupation: string;
+  caste: string;
+  annual_income: number;
+}
+
+interface WalletInfo {
+  govt_wallet: {
+    balance: number;
+    transactions: string[];
+  };
+  personal_wallet: {
+    balance: number;
+    transactions: string[];
+  };
+}
+
+interface ApiCitizen {
+  account_info: AccountInfo;
+  personal_info: PersonalInfo;
+  wallet_info: WalletInfo;
+  scheme_info?: string[];
+}
+
 export default function BeneficiariesPage() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [stateFilter, setStateFilter] = useState('all');
+  const [occupationFilter, setOccupationFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [citizens, setCitizens] = useState<ApiCitizen[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const itemsPerPage = 10;
+  const router = useRouter();
 
-  // Sample data for beneficiaries
-  const beneficiaries = [
-    {
-      id: 1,
-      name: 'Rajesh Kumar',
-      state: 'Uttar Pradesh',
-      gender: 'Male',
-      aadhaar: '1234',
-      location: 'Lucknow',
-    },
-    {
-      id: 2,
-      name: 'Priya Singh',
-      state: 'Bihar',
-      gender: 'Female',
-      aadhaar: '5678',
-      location: 'Patna',
-    },
-    {
-      id: 3,
-      name: 'Amit Patel',
-      state: 'Gujarat',
-      gender: 'Male',
-      aadhaar: '9012',
-      location: 'Ahmedabad',
-    },
-    {
-      id: 4,
-      name: 'Sunita Sharma',
-      state: 'Rajasthan',
-      gender: 'Female',
-      aadhaar: '3456',
-      location: 'Jaipur',
-    },
-    {
-      id: 5,
-      name: 'Vikram Mehta',
-      state: 'Maharashtra',
-      gender: 'Male',
-      aadhaar: '7890',
-      location: 'Mumbai',
-    },
-    {
-      id: 6,
-      name: 'Ananya Gupta',
-      state: 'West Bengal',
-      gender: 'Female',
-      aadhaar: '2345',
-      location: 'Kolkata',
-    },
-    {
-      id: 7,
-      name: 'Rahul Verma',
-      state: 'Madhya Pradesh',
-      gender: 'Male',
-      aadhaar: '6789',
-      location: 'Bhopal',
-    },
-  ];
-
-  // Filter beneficiaries based on state
-  const filteredBeneficiaries =
-    stateFilter === 'all'
-      ? beneficiaries
-      : beneficiaries.filter(
-          (beneficiary) => beneficiary.state === stateFilter,
+  // Fetch citizens from API
+  useEffect(() => {
+    const fetchCitizens = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get<ApiCitizen[]>(
+          `${API_BASE_URL}/governments/${GOVERNMENT_ID}/citizens`,
         );
+
+        // Filter citizens who have schemes
+        const beneficiaries = response.data.filter(citizen => citizen.scheme_info && citizen.scheme_info.length > 0);
+        setCitizens(beneficiaries);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching beneficiaries:', err);
+        setError('Failed to load beneficiaries');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCitizens();
+  }, []);
+
+  // Filter beneficiaries based on occupation and search query
+  const filteredBeneficiaries = citizens
+    .filter(
+      (citizen) =>
+        occupationFilter === 'all' ||
+        citizen.personal_info.occupation.toLowerCase() === occupationFilter.toLowerCase(),
+    )
+    .filter((citizen) => {
+      if (!searchQuery) return true;
+
+      const query = searchQuery.toLowerCase();
+      return (
+        citizen.account_info.name.toLowerCase().includes(query) ||
+        citizen.account_info.email.toLowerCase().includes(query) ||
+        citizen.personal_info.id_number.toLowerCase().includes(query) ||
+        citizen.personal_info.phone.toLowerCase().includes(query)
+      );
+    });
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredBeneficiaries.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentBeneficiaries = filteredBeneficiaries.slice(
-    startIndex,
-    endIndex,
-  );
+  const currentBeneficiaries = filteredBeneficiaries.slice(startIndex, endIndex);
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -186,20 +196,19 @@ export default function BeneficiariesPage() {
         pageNumbers.push(totalPages);
       }
     }
+
     return pageNumbers;
   };
 
-  // Get unique states for filter
-  const states = [
-    ...new Set(beneficiaries.map((beneficiary) => beneficiary.state)),
+  // Get unique occupations for filter
+  const occupations = [
+    'all',
+    ...new Set(citizens.map((citizen) => citizen.personal_info.occupation)),
   ];
 
   return (
     <div className={`${inter.className} flex min-h-screen bg-white`}>
-      {/*<Sidebar pathname="/beneficiaries" isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />*/}
-
       {/* Main content */}
-
       <div className="flex-1 transition-all duration-300">
         {/* Top navbar */}
         <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-white px-4 sm:px-6">
@@ -250,41 +259,23 @@ export default function BeneficiariesPage() {
 
         {/* Beneficiaries content */}
         <main className="p-4 sm:p-6">
-          {/* Top section with heading and buttons */}
+          {/* Top section with heading */}
           <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <h1 className="text-2xl font-semibold">Beneficiaries</h1>
-            <div className="flex flex-wrap gap-2">
-              <Button className="bg-[#2563EB] hover:bg-[#1d4ed8]">
-                <Plus className="mr-2 h-4 w-4" /> Add Beneficiary
-              </Button>
-              <Button
-                variant="outline"
-                className="border-gray-300 text-gray-700"
-              >
-                <Edit className="mr-2 h-4 w-4" /> Edit Beneficiary
-              </Button>
-              <Button
-                variant="outline"
-                className="border-red-300 text-red-500 hover:bg-red-50"
-              >
-                <Trash2 className="mr-2 h-4 w-4" /> Delete Beneficiary
-              </Button>
-            </div>
           </div>
 
           {/* Search and filter section */}
           <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-500" />
-              <Select value={stateFilter} onValueChange={setStateFilter}>
+              <Select value={occupationFilter} onValueChange={setOccupationFilter}>
                 <SelectTrigger className="w-[180px] border-gray-200 bg-gray-50">
-                  <SelectValue placeholder="Filter by state" />
+                  <SelectValue placeholder="Filter by occupation" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All States</SelectItem>
-                  {states.map((state) => (
-                    <SelectItem key={state} value={state}>
-                      {state}
+                  {occupations.map((occupation) => (
+                    <SelectItem key={occupation} value={occupation}>
+                      {occupation.charAt(0).toUpperCase() + occupation.slice(1)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -296,128 +287,196 @@ export default function BeneficiariesPage() {
                 type="search"
                 placeholder="Search Beneficiaries..."
                 className="w-full border-gray-200 bg-gray-50 pl-8 sm:w-[300px]"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1); // Reset to first page on search
+                }}
               />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Clear search</span>
+                </Button>
+              )}
             </div>
           </div>
 
-          {/* Table */}
-          <div className="overflow-hidden rounded-lg border shadow-sm">
-            <Table>
-              <TableHeader className="bg-[#F5F5F5]">
-                <TableRow>
-                  <TableHead className="text-xs font-semibold uppercase">
-                    Beneficiary Name
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase">
-                    State
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase">
-                    Gender
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase">
-                    Aadhaar Last 4
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase">
-                    Location
-                  </TableHead>
-                  <TableHead className="text-right text-xs font-semibold uppercase">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredBeneficiaries.map((beneficiary) => (
-                  <TableRow
-                    key={beneficiary.id}
-                    className="transition-colors hover:bg-[#EEEEEE]"
-                  >
-                    <TableCell className="py-4 font-medium">
-                      {beneficiary.name}
-                    </TableCell>
-                    <TableCell className="py-4">{beneficiary.state}</TableCell>
-                    <TableCell className="py-4">{beneficiary.gender}</TableCell>
-                    <TableCell className="py-4">
-                      XXXX XXXX {beneficiary.aadhaar}
-                    </TableCell>
-                    <TableCell className="py-4">
-                      {beneficiary.location}
-                    </TableCell>
-                    <TableCell className="py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-gray-500 hover:text-[#2563EB]"
+          {/* Loading state */}
+          {isLoading ? (
+            <div className="flex h-64 items-center justify-center">
+              <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
+            </div>
+          ) : error ? (
+            <div className="mb-6 rounded-md border border-amber-200 bg-amber-50 p-4 text-amber-700">
+              {error}
+            </div>
+          ) : (
+            <>
+              {/* Beneficiaries table */}
+              <div className="mb-6 overflow-hidden rounded-lg border shadow-sm">
+                <Table>
+                  <TableHeader className="bg-[#F5F5F5]">
+                    <TableRow>
+                      <TableHead className="text-xs font-semibold uppercase">
+                        Beneficiary
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">
+                        ID Number
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">
+                        Occupation
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">
+                        Annual Income
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">
+                        Govt. Wallet
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">
+                        Schemes
+                      </TableHead>
+                      <TableHead className="text-right text-xs font-semibold uppercase">
+                        Actions
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredBeneficiaries.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={7}
+                          className="py-8 text-center text-gray-500"
                         >
-                          <Edit className="h-4 w-4" />
-                          <span className="sr-only">Edit</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-gray-500 hover:text-red-500"
+                          No beneficiaries found
+                          {searchQuery ? ` matching "${searchQuery}"` : ''}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      currentBeneficiaries.map((citizen) => (
+                        <TableRow
+                          key={citizen.account_info.id}
+                          className="cursor-pointer transition-colors hover:bg-[#EEEEEE]"
                         >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                          <TableCell className="py-4">
+                            <div className="flex items-center gap-3">
+                              <Image
+                                src={citizen.account_info.image_url}
+                                width={32}
+                                height={32}
+                                className="rounded-full"
+                                alt={citizen.account_info.name}
+                              />
+                              <div>
+                                <div className="font-medium">
+                                  {citizen.account_info.name}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {citizen.account_info.email}
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-4">
+                            {citizen.personal_info.id_number}
+                          </TableCell>
+                          <TableCell className="py-4">
+                            {citizen.personal_info.occupation.charAt(0).toUpperCase() +
+                              citizen.personal_info.occupation.slice(1)}
+                          </TableCell>
+                          <TableCell className="py-4">
+                            ₹{citizen.personal_info.annual_income.toLocaleString('en-IN')}
+                          </TableCell>
+                          <TableCell className="py-4">
+                            ₹{citizen.wallet_info.govt_wallet.balance.toLocaleString('en-IN')}
+                          </TableCell>
+                          <TableCell className="py-4">
+                            <Badge variant="secondary">
+                              {citizen.scheme_info?.length || 0} Schemes
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="py-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-gray-500 hover:text-[#2563EB]"
+                                onClick={() => router.push(`/beneficiaries/${citizen.account_info.id}`)}
+                              >
+                                <Eye className="h-4 w-4" />
+                                <span className="sr-only">View</span>
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
 
-          {/* Pagination */}
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (currentPage > 1) handlePageChange(currentPage - 1);
-                  }}
-                  className={
-                    currentPage === 1 ? 'pointer-events-none opacity-50' : ''
-                  }
-                />
-              </PaginationItem>
-              {getPageNumbers().map((page, index) => (
-                <PaginationItem key={index}>
-                  {page === '...' ? (
-                    <PaginationEllipsis />
-                  ) : (
-                    <PaginationLink
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handlePageChange(page as number);
-                      }}
-                      isActive={currentPage === page}
-                    >
-                      {page}
-                    </PaginationLink>
-                  )}
-                </PaginationItem>
-              ))}
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (currentPage < totalPages)
-                      handlePageChange(currentPage + 1);
-                  }}
-                  className={
-                    currentPage === totalPages
-                      ? 'pointer-events-none opacity-50'
-                      : ''
-                  }
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+              {/* Pagination */}
+              {filteredBeneficiaries.length > 0 && (
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage > 1) handlePageChange(currentPage - 1);
+                        }}
+                        className={
+                          currentPage === 1 ? 'pointer-events-none opacity-50' : ''
+                        }
+                      />
+                    </PaginationItem>
+                    {getPageNumbers().map((page, index) => (
+                      <PaginationItem key={index}>
+                        {page === '...' ? (
+                          <PaginationEllipsis />
+                        ) : (
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handlePageChange(page as number);
+                            }}
+                            isActive={currentPage === page}
+                          >
+                            {page}
+                          </PaginationLink>
+                        )}
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage < totalPages)
+                            handlePageChange(currentPage + 1);
+                        }}
+                        className={
+                          currentPage === totalPages
+                            ? 'pointer-events-none opacity-50'
+                            : ''
+                        }
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </>
+          )}
         </main>
       </div>
     </div>

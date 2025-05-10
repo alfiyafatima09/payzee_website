@@ -54,25 +54,35 @@ import { useRouter } from 'next/navigation';
 
 const inter = Inter({ subsets: ['latin'] });
 
+// Constants
+const GOVERNMENT_ID = '1b7854b9-783b-49d8-b8b3-d4e1e17106c0';
+const API_BASE_URL = 'http://localhost:8000/api/v1';
+
 // Define types for our API response
 interface EligibilityCriteria {
-  date_of_birth: string | null;
+  occupation: string | null;
+  min_age: number | null;
+  max_age: number | null;
   gender: string | null;
   state: string | null;
   district: string | null;
   city: string | null;
   caste: string | null;
+  annual_income: number | null;
 }
 
 interface ApiScheme {
-  scheme_name: string;
-  scheme_id: string;
+  id: string;
+  name: string;
   description: string;
+  govt_id: string;
   amount: number;
   status: string;
   created_at: string;
+  updated_at: string;
   eligibility_criteria: EligibilityCriteria;
   tags: string[];
+  beneficiaries: any[];
 }
 
 // Define types for our transformed scheme data
@@ -86,12 +96,15 @@ interface TransformedScheme {
   fundAllocated: string;
   status: string;
   eligibility: {
-    dob: string | null;
+    occupation: string | null;
+    minAge: number | null;
+    maxAge: number | null;
     gender: string | null;
     state: string | null;
     district: string | null;
-    income: null;
+    city: string | null;
     caste: string | null;
+    annualIncome: number | null;
     tags: string[];
   };
   createdAt: string;
@@ -113,13 +126,13 @@ export default function SchemesPage() {
       try {
         setIsLoading(true);
         const response = await axios.get<ApiScheme[]>(
-          'http://127.0.0.1:8000/api/v1/government/schemes',
+          `${API_BASE_URL}/governments/${GOVERNMENT_ID}/schemes`,
         );
 
         // Transform API data to match component structure
         const transformedSchemes = response.data.map((scheme) => ({
-          id: scheme.scheme_id,
-          name: scheme.scheme_name,
+          id: scheme.id,
+          name: scheme.name,
           description: scheme.description,
           amount: scheme.amount,
           launchDate: new Date(scheme.created_at).toLocaleDateString('en-IN', {
@@ -131,12 +144,15 @@ export default function SchemesPage() {
           fundAllocated: `₹${scheme.amount.toLocaleString('en-IN')}`,
           status: scheme.status,
           eligibility: {
-            dob: scheme.eligibility_criteria?.date_of_birth,
-            gender: scheme.eligibility_criteria?.gender,
-            state: scheme.eligibility_criteria?.state,
-            district: scheme.eligibility_criteria?.district,
-            income: null,
-            caste: scheme.eligibility_criteria?.caste,
+            occupation: scheme.eligibility_criteria?.occupation || null,
+            minAge: scheme.eligibility_criteria?.min_age || null,
+            maxAge: scheme.eligibility_criteria?.max_age || null,
+            gender: scheme.eligibility_criteria?.gender || null,
+            state: scheme.eligibility_criteria?.state || null,
+            district: scheme.eligibility_criteria?.district || null,
+            city: scheme.eligibility_criteria?.city || null,
+            caste: scheme.eligibility_criteria?.caste || null,
+            annualIncome: scheme.eligibility_criteria?.annual_income || null,
             tags: scheme.tags || [],
           },
           createdAt: new Date(scheme.created_at).toLocaleDateString('en-IN'),
@@ -401,7 +417,9 @@ export default function SchemesPage() {
                       currentSchemes.map((scheme) => (
                         <TableRow
                           key={scheme.id}
-                          className="cursor-pointer transition-colors hover:bg-[#EEEEEE]"
+                          className={`cursor-pointer transition-colors hover:bg-[#EEEEEE] ${
+                            scheme.status === 'inactive' ? 'opacity-75' : ''
+                          }`}
                           onClick={() => router.push(`/schemes/${scheme.id}`)}
                         >
                           <TableCell className="py-4 font-medium">

@@ -39,6 +39,10 @@ import { Textarea } from '@/components/ui/textarea';
 
 const inter = Inter({ subsets: ['latin'] });
 
+// Constants
+const GOVERNMENT_ID = '1b7854b9-783b-49d8-b8b3-d4e1e17106c0';
+const API_BASE_URL = 'http://localhost:8000/api/v1';
+
 export default function CreateSchemePage() {
   const router = useRouter();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -52,12 +56,15 @@ export default function CreateSchemePage() {
     amount: 0,
     status: 'active',
     eligibility: {
-      dob: null,
+      occupation: null,
+      min_age: null,
+      max_age: null,
       gender: null,
       state: null,
       district: null,
       city: null,
       caste: null,
+      annual_income: null,
       tags: [] as string[],
     },
   });
@@ -112,24 +119,27 @@ export default function CreateSchemePage() {
 
       // Transform form data to API format
       const schemePayload = {
-        scheme_name: formData.name,
+        name: formData.name,
         description: formData.description,
         amount: formData.amount,
         status: formData.status,
         eligibility_criteria: {
-          date_of_birth: formData.eligibility.dob,
+          occupation: formData.eligibility.occupation,
+          min_age: formData.eligibility.min_age,
+          max_age: formData.eligibility.max_age,
           gender: formData.eligibility.gender,
           state: formData.eligibility.state,
           district: formData.eligibility.district,
           city: formData.eligibility.city,
           caste: formData.eligibility.caste,
+          annual_income: formData.eligibility.annual_income,
         },
         tags: formData.eligibility.tags,
       };
 
       // Make API call to create the scheme
       await axios.post(
-        'http://127.0.0.1:8000/api/v1/government/schemes',
+        `${API_BASE_URL}/governments/${GOVERNMENT_ID}/schemes`,
         schemePayload,
       );
 
@@ -319,17 +329,48 @@ export default function CreateSchemePage() {
 
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                          <Label htmlFor="eligibility-dob">Date of Birth</Label>
+                          <Label htmlFor="eligibility-occupation">Occupation</Label>
                           <Input
-                            id="eligibility-dob"
-                            type="text"
-                            placeholder="e.g. 01-01-1990"
-                            value={formData.eligibility.dob || ''}
+                            id="eligibility-occupation"
+                            value={formData.eligibility.occupation || ''}
                             onChange={(e) =>
-                              handleEligibilityChange(
-                                'dob',
-                                e.target.value || null,
-                              )
+                              handleEligibilityChange('occupation', e.target.value || null)
+                            }
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="eligibility-min_age">Minimum Age</Label>
+                          <Input
+                            id="eligibility-min_age"
+                            type="number"
+                            value={formData.eligibility.min_age || ''}
+                            onChange={(e) =>
+                              handleEligibilityChange('min_age', e.target.value ? Number(e.target.value) : null)
+                            }
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="eligibility-max_age">Maximum Age</Label>
+                          <Input
+                            id="eligibility-max_age"
+                            type="number"
+                            value={formData.eligibility.max_age || ''}
+                            onChange={(e) =>
+                              handleEligibilityChange('max_age', e.target.value ? Number(e.target.value) : null)
+                            }
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="eligibility-annual_income">Annual Income (₹)</Label>
+                          <Input
+                            id="eligibility-annual_income"
+                            type="number"
+                            value={formData.eligibility.annual_income || ''}
+                            onChange={(e) =>
+                              handleEligibilityChange('annual_income', e.target.value ? Number(e.target.value) : null)
                             }
                           />
                         </div>
@@ -360,10 +401,7 @@ export default function CreateSchemePage() {
                             id="eligibility-state"
                             value={formData.eligibility.state || ''}
                             onChange={(e) =>
-                              handleEligibilityChange(
-                                'state',
-                                e.target.value || null,
-                              )
+                              handleEligibilityChange('state', e.target.value || null)
                             }
                             placeholder="e.g. Karnataka"
                           />
@@ -375,10 +413,7 @@ export default function CreateSchemePage() {
                             id="eligibility-district"
                             value={formData.eligibility.district || ''}
                             onChange={(e) =>
-                              handleEligibilityChange(
-                                'district',
-                                e.target.value || null,
-                              )
+                              handleEligibilityChange('district', e.target.value || null)
                             }
                             placeholder="e.g. Bangalore Urban"
                           />
@@ -390,10 +425,7 @@ export default function CreateSchemePage() {
                             id="eligibility-city"
                             value={formData.eligibility.city || ''}
                             onChange={(e) =>
-                              handleEligibilityChange(
-                                'city',
-                                e.target.value || null,
-                              )
+                              handleEligibilityChange('city', e.target.value || null)
                             }
                             placeholder="e.g. Bangalore"
                           />
@@ -405,10 +437,7 @@ export default function CreateSchemePage() {
                             id="eligibility-caste"
                             value={formData.eligibility.caste || ''}
                             onChange={(e) =>
-                              handleEligibilityChange(
-                                'caste',
-                                e.target.value || null,
-                              )
+                              handleEligibilityChange('caste', e.target.value || null)
                             }
                             placeholder="e.g. SC/ST/OBC"
                           />

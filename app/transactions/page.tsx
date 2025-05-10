@@ -15,11 +15,13 @@ import {
   Store,
   Users,
   X,
+  Eye,
 } from 'lucide-react';
 import { Inter } from 'next/font/google';
 import Image from 'next/image';
 import Link from 'next/link';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -61,41 +63,32 @@ import { Sidebar } from '@/components/sidebar';
 
 const inter = Inter({ subsets: ['latin'] });
 
-interface Transaction {
-  transaction_id: string;
-  vendor_id: string;
-  category: string;
-  user_id: string;
-  status: string;
-  timestamp: string;
-  amount: number;
-}
+// Constants
+const GOVERNMENT_ID = '1b7854b9-783b-49d8-b8b3-d4e1e17106c0';
+const API_BASE_URL = 'http://localhost:8000/api/v1';
 
-interface UserData {
+// Define types for our API response
+interface ApiTransaction {
   id: string;
-  password: string;
-  remaining_amt: number;
-  allocated_amt: number;
-  past_transactions: Transaction[];
-  govt_wallet: number;
-  personal_wallet: number;
-  account_info: {
-    phone_number: string;
-    date_created: string;
-    address: string;
-    email: string;
-    full_name: string;
-    username: string;
-    aadhaar_number: string;
-  };
+  from_id: string;
+  to_id: string;
+  amount: number;
+  tx_type: 'citizen-to-vendor' | 'government-to-citizen';
+  scheme_id: string | null;
+  description: string;
+  timestamp: string;
+  status: 'completed' | 'pending' | 'failed';
 }
 
+// Define types for our transformed transaction data
 interface TransformedTransaction {
   id: string;
-  senderId: string;
-  receiverId: string;
-  amount: string;
-  region: string;
+  fromId: string;
+  toId: string;
+  amount: number;
+  type: string;
+  schemeId: string | null;
+  description: string;
   date: string;
   status: string;
 }
@@ -104,39 +97,46 @@ export default function TransactionsPage() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [regionFilter, setRegionFilter] = useState('all');
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [transactions, setTransactions] = useState<TransformedTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [apiTransactions, setApiTransactions] = useState<TransformedTransaction[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const itemsPerPage = 10;
+  const router = useRouter();
 
   // Fetch transactions from API
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get<Transaction[]>(
-          'http://127.0.0.1:8000/api/v1/government/transactions',
+        const response = await axios.get<ApiTransaction[]>(
+          `${API_BASE_URL}/governments/${GOVERNMENT_ID}/transactions`,
         );
 
-        // Transform the API data to match your expected structure
+        // Transform API data to match component structure
         const transformedTransactions = response.data.map((transaction) => ({
-          id: transaction.transaction_id,
-          senderId: transaction.user_id,
-          receiverId: transaction.vendor_id,
-          amount: `₹${transaction.amount}`,
-          region: transaction.category,
-          date: new Date(transaction.timestamp).toLocaleDateString('en-GB', {
+          id: transaction.id,
+          fromId: transaction.from_id,
+          toId: transaction.to_id,
+          amount: transaction.amount,
+          type: transaction.tx_type,
+          schemeId: transaction.scheme_id,
+          description: transaction.description,
+          date: new Date(transaction.timestamp).toLocaleDateString('en-IN', {
             day: 'numeric',
             month: 'short',
             year: 'numeric',
           }),
-          status: transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1),
+          status: transaction.status,
         }));
 
-        setApiTransactions(transformedTransactions);
+        setTransactions(transformedTransactions);
         setError(null);
       } catch (err) {
         console.error('Error fetching transactions:', err);
-        setError('Failed to load transactions.');
+        setError('Failed to load transactions');
       } finally {
         setIsLoading(false);
       }
@@ -145,17 +145,29 @@ export default function TransactionsPage() {
     fetchTransactions();
   }, []);
 
-  // Use API transactions if available, otherwise use hardcoded transactions
-  const transactions: TransformedTransaction[] = apiTransactions.length > 0 ? apiTransactions : [];
+  // Filter transactions based on status and search query
+  const filteredTransactions = transactions
+    .filter(
+      (transaction) =>
+        statusFilter === 'all' ||
+        transaction.status.toLowerCase() === statusFilter.toLowerCase(),
+    )
+    .filter((transaction) => {
+      if (!searchQuery) return true;
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+      const query = searchQuery.toLowerCase();
+      return (
+        transaction.description.toLowerCase().includes(query) ||
+        transaction.type.toLowerCase().includes(query) ||
+        transaction.id.toLowerCase().includes(query)
+      );
+    });
 
   // Calculate pagination
-  const totalPages = Math.ceil(transactions.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentTransactions = transactions.slice(startIndex, endIndex);
+  const currentTransactions = filteredTransactions.slice(startIndex, endIndex);
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -200,17 +212,10 @@ export default function TransactionsPage() {
     return pageNumbers;
   };
 
-  // Filter transactions based on region
-  const filteredTransactions =
-    regionFilter === 'all'
-      ? transactions
-      : transactions.filter(
-          (transaction) => transaction.region === regionFilter,
-        );
-
-  // Get unique regions for filter
-  const regions = [
-    ...new Set(transactions.map((transaction) => transaction.region)),
+  // Get unique transaction types for filter
+  const transactionTypes = [
+    'all',
+    ...new Set(transactions.map((transaction) => transaction.type)),
   ];
 
   return (
@@ -298,17 +303,15 @@ export default function TransactionsPage() {
           <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-500" />
-              <Select value={regionFilter} onValueChange={setRegionFilter}>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[180px] border-gray-200 bg-gray-50">
-                  <SelectValue placeholder="Filter by region" />
+                  <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Regions</SelectItem>
-                  {regions.map((region) => (
-                    <SelectItem key={region} value={region}>
-                      {region}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -331,50 +334,92 @@ export default function TransactionsPage() {
                     Transaction ID
                   </TableHead>
                   <TableHead className="text-xs font-semibold uppercase">
-                    Sender ID
+                    Description
                   </TableHead>
                   <TableHead className="text-xs font-semibold uppercase">
-                    Receiver ID
+                    Type
                   </TableHead>
                   <TableHead className="text-xs font-semibold uppercase">
                     Amount
                   </TableHead>
                   <TableHead className="text-xs font-semibold uppercase">
-                    Region
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase">
-                    Transaction Date
+                    Date
                   </TableHead>
                   <TableHead className="text-xs font-semibold uppercase">
                     Status
                   </TableHead>
+                  <TableHead className="text-right text-xs font-semibold uppercase">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {currentTransactions.map((transaction) => (
-                  <TableRow
-                    key={transaction.id}
-                    className="transition-colors hover:bg-[#EEEEEE]"
-                  >
-                    <TableCell className="py-4 font-medium">
-                      {transaction.id}
-                    </TableCell>
-                    <TableCell className="py-4">
-                      {transaction.senderId}
-                    </TableCell>
-                    <TableCell className="py-4">
-                      {transaction.receiverId}
-                    </TableCell>
-                    <TableCell className="py-4">{transaction.amount}</TableCell>
-                    <TableCell className="py-4">{transaction.region}</TableCell>
-                    <TableCell className="py-4">{transaction.date}</TableCell>
-                    <TableCell className="py-4">
-                      <Badge className="border-green-200 bg-green-100 text-green-800 hover:bg-green-100">
-                        {transaction.status}
-                      </Badge>
+                {filteredTransactions.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="py-8 text-center text-gray-500"
+                    >
+                      No transactions found
+                      {searchQuery ? ` matching "${searchQuery}"` : ''}
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  currentTransactions.map((transaction) => (
+                    <TableRow
+                      key={transaction.id}
+                      className={`cursor-pointer transition-colors hover:bg-[#EEEEEE] ${
+                        transaction.status === 'failed' ? 'opacity-75' : ''
+                      }`}
+                    >
+                      <TableCell className="py-4 font-medium">
+                        {transaction.id}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        {transaction.description}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        {transaction.type.split('-').map(word => 
+                          word.charAt(0).toUpperCase() + word.slice(1)
+                        ).join(' ')}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        ₹{transaction.amount.toLocaleString('en-IN')}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        {transaction.date}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <Badge
+                          variant="outline"
+                          className={`${
+                            transaction.status === 'completed'
+                              ? 'border-green-200 bg-green-50 text-green-700'
+                              : transaction.status === 'pending'
+                              ? 'border-yellow-200 bg-yellow-50 text-yellow-700'
+                              : 'border-red-200 bg-red-50 text-red-700'
+                          }`}
+                        >
+                          {transaction.status.charAt(0).toUpperCase() +
+                            transaction.status.slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-gray-500 hover:text-[#2563EB]"
+                            onClick={() => router.push(`/transactions/${transaction.id}`)}
+                          >
+                            <Eye className="h-4 w-4" />
+                            <span className="sr-only">View</span>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>

@@ -6,6 +6,7 @@ import axios from 'axios';
 import { ArrowLeft, Menu, Save, Bell } from 'lucide-react';
 import { Inter } from 'next/font/google';
 import Image from 'next/image';
+import { useToast } from "@/components/ui/use-toast";
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,25 +41,35 @@ import { Textarea } from '@/components/ui/textarea';
 
 const inter = Inter({ subsets: ['latin'] });
 
+// Constants
+const GOVERNMENT_ID = '1b7854b9-783b-49d8-b8b3-d4e1e17106c0';
+const API_BASE_URL = 'http://localhost:8000/api/v1';
+
 // Define types for our scheme data
 interface EligibilityCriteria {
-  date_of_birth: string | null;
+  occupation: string | null;
+  min_age: number | null;
+  max_age: number | null;
   gender: string | null;
   state: string | null;
   district: string | null;
   city: string | null;
   caste: string | null;
+  annual_income: number | null;
 }
 
 interface ApiScheme {
-  scheme_name: string;
-  scheme_id: string;
+  id: string;
+  name: string;
   description: string;
+  govt_id: string;
   amount: number;
   status: string;
   created_at: string;
+  updated_at: string;
   eligibility_criteria: EligibilityCriteria;
   tags: string[];
+  beneficiaries: any[];
 }
 
 interface FormDataType {
@@ -67,12 +78,15 @@ interface FormDataType {
   amount: number;
   status: string;
   eligibility: {
-    dob: string | null;
+    occupation: string | null;
+    min_age: number | null;
+    max_age: number | null;
     gender: string | null;
     state: string | null;
     district: string | null;
     city: string | null;
     caste: string | null;
+    annual_income: number | null;
     tags: string[];
   };
 }
@@ -84,6 +98,7 @@ export default function SchemeDetailsPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Get scheme ID from URL params
   const schemeId = params.id as string;
@@ -96,12 +111,15 @@ export default function SchemeDetailsPage() {
     amount: 0,
     status: 'active',
     eligibility: {
-      dob: null,
+      occupation: null,
+      min_age: null,
+      max_age: null,
       gender: null,
       state: null,
       district: null,
       city: null,
       caste: null,
+      annual_income: null,
       tags: [],
     },
   });
@@ -111,25 +129,28 @@ export default function SchemeDetailsPage() {
     const fetchScheme = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(
-          `http://127.0.0.1:8000/api/v1/government/schemes/${schemeId}`,
+        const response = await axios.get<ApiScheme>(
+          `${API_BASE_URL}/governments/${GOVERNMENT_ID}/schemes/${schemeId}`,
         );
 
         const fetchedScheme = response.data;
         setScheme(fetchedScheme);
 
         setFormData({
-          name: fetchedScheme.scheme_name,
+          name: fetchedScheme.name,
           description: fetchedScheme.description,
           amount: fetchedScheme.amount,
           status: fetchedScheme.status,
           eligibility: {
-            dob: fetchedScheme.eligibility_criteria?.date_of_birth || null,
+            occupation: fetchedScheme.eligibility_criteria?.occupation || null,
+            min_age: fetchedScheme.eligibility_criteria?.min_age || null,
+            max_age: fetchedScheme.eligibility_criteria?.max_age || null,
             gender: fetchedScheme.eligibility_criteria?.gender || null,
             state: fetchedScheme.eligibility_criteria?.state || null,
             district: fetchedScheme.eligibility_criteria?.district || null,
             city: fetchedScheme.eligibility_criteria?.city || null,
             caste: fetchedScheme.eligibility_criteria?.caste || null,
+            annual_income: fetchedScheme.eligibility_criteria?.annual_income || null,
             tags: fetchedScheme.tags || [],
           },
         });
@@ -164,7 +185,7 @@ export default function SchemeDetailsPage() {
   // Handle eligibility field changes
   const handleEligibilityChange = (
     field: keyof FormDataType['eligibility'],
-    value: string | null | string[],
+    value: string | number | null | string[],
   ) => {
     setFormData({
       ...formData,
@@ -194,24 +215,27 @@ export default function SchemeDetailsPage() {
 
       // Transform the data back to API format
       const updatePayload = {
-        scheme_name: formData.name,
+        name: formData.name,
         description: formData.description,
         amount: formData.amount,
         status: formData.status,
         eligibility_criteria: {
-          date_of_birth: formData.eligibility.dob,
+          occupation: formData.eligibility.occupation,
+          min_age: formData.eligibility.min_age,
+          max_age: formData.eligibility.max_age,
           gender: formData.eligibility.gender,
           state: formData.eligibility.state,
           district: formData.eligibility.district,
           city: formData.eligibility.city,
           caste: formData.eligibility.caste,
+          annual_income: formData.eligibility.annual_income,
         },
         tags: formData.eligibility.tags,
       };
 
       // Make API call to update the scheme
       await axios.put(
-        `http://127.0.0.1:8000/api/v1/government/schemes/${schemeId}`,
+        `${API_BASE_URL}/governments/${GOVERNMENT_ID}/schemes/${schemeId}`,
         updatePayload,
       );
 
@@ -219,7 +243,7 @@ export default function SchemeDetailsPage() {
         // Update local state with the updated data
         setScheme({
           ...scheme,
-          scheme_name: formData.name,
+          name: formData.name,
           description: formData.description,
           amount: formData.amount,
           status: formData.status,
@@ -230,11 +254,18 @@ export default function SchemeDetailsPage() {
 
       setIsEditing(false);
       setError(null);
-      alert('Scheme updated successfully');
+      toast({
+        title: "Success",
+        description: "Scheme updated successfully",
+      });
     } catch (err) {
       console.error('Error updating scheme:', err);
       setError('Failed to update scheme');
-      alert('Failed to update scheme');
+      toast({
+        title: "Error",
+        description: "Failed to update scheme",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -394,22 +425,72 @@ export default function SchemeDetailsPage() {
           )}
 
           {/* Scheme details card */}
-          <Card className="mb-6">
+          <Card className={`mb-6 ${scheme.status === 'inactive' ? 'opacity-75' : ''}`}>
             <CardHeader>
-              <CardTitle className="text-xl">{scheme.scheme_name}</CardTitle>
-              <CardDescription>
-                <Badge
-                  variant="outline"
-                  className={`${
-                    scheme.status === 'active'
-                      ? 'border-green-200 bg-green-50 text-green-700'
-                      : 'border-gray-200 bg-gray-50 text-gray-700'
-                  }`}
-                >
-                  {scheme.status.charAt(0).toUpperCase() +
-                    scheme.status.slice(1)}
-                </Badge>
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl">{scheme.name}</CardTitle>
+                  <CardDescription>
+                    <Badge
+                      variant="outline"
+                      className={`${
+                        scheme.status === 'active'
+                          ? 'border-green-200 bg-green-50 text-green-700'
+                          : 'border-gray-200 bg-gray-50 text-gray-700'
+                      }`}
+                    >
+                      {scheme.status.charAt(0).toUpperCase() +
+                        scheme.status.slice(1)}
+                    </Badge>
+                  </CardDescription>
+                </div>
+                {!isEditing && (
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="status-toggle" className="text-sm">Status:</Label>
+                    <Select
+                      value={scheme.status}
+                      onValueChange={async (value) => {
+                        try {
+                          setIsLoading(true);
+                          const updatePayload = {
+                            ...scheme,
+                            status: value,
+                          };
+                          await axios.put(
+                            `${API_BASE_URL}/governments/${GOVERNMENT_ID}/schemes/${schemeId}`,
+                            updatePayload,
+                          );
+                          setScheme({
+                            ...scheme,
+                            status: value,
+                          });
+                          toast({
+                            title: "Success",
+                            description: `Scheme ${value === 'active' ? 'activated' : 'deactivated'} successfully`,
+                          });
+                        } catch (err) {
+                          console.error('Error updating scheme status:', err);
+                          toast({
+                            title: "Error",
+                            description: "Failed to update scheme status",
+                            variant: "destructive",
+                          });
+                        } finally {
+                          setIsLoading(false);
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -418,7 +499,7 @@ export default function SchemeDetailsPage() {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="id">Scheme ID</Label>
-                      <Input id="id" value={scheme.scheme_id} disabled />
+                      <Input id="id" value={scheme.id} disabled />
                     </div>
 
                     <div className="space-y-2">
@@ -426,7 +507,7 @@ export default function SchemeDetailsPage() {
                       <Input
                         id="name"
                         name="name"
-                        value={isEditing ? formData.name : scheme.scheme_name}
+                        value={isEditing ? formData.name : scheme.name}
                         onChange={handleChange}
                         disabled={!isEditing}
                       />
@@ -513,21 +594,80 @@ export default function SchemeDetailsPage() {
 
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                          <Label htmlFor="eligibility-dob">Date of Birth</Label>
+                          <Label htmlFor="eligibility-occupation">Occupation</Label>
                           <Input
-                            id="eligibility-dob"
+                            id="eligibility-occupation"
                             type="text"
-                            placeholder="e.g. 01-01-1990"
+                            placeholder="e.g. Farmer"
                             value={
                               isEditing
-                                ? formData.eligibility.dob || ''
-                                : scheme.eligibility_criteria.date_of_birth ||
-                                  ''
+                                ? formData.eligibility.occupation || ''
+                                : scheme.eligibility_criteria.occupation || ''
                             }
                             onChange={(e) =>
                               handleEligibilityChange(
-                                'dob',
+                                'occupation',
                                 e.target.value || null,
+                              )
+                            }
+                            disabled={!isEditing}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="eligibility-annual_income">Annual Income (₹)</Label>
+                          <Input
+                            id="eligibility-annual_income"
+                            type="number"
+                            value={
+                              isEditing
+                                ? formData.eligibility.annual_income || ''
+                                : scheme.eligibility_criteria.annual_income || ''
+                            }
+                            onChange={(e) =>
+                              handleEligibilityChange(
+                                'annual_income',
+                                e.target.value ? Number(e.target.value) : null,
+                              )
+                            }
+                            disabled={!isEditing}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="eligibility-min_age">Minimum Age</Label>
+                          <Input
+                            id="eligibility-min_age"
+                            type="number"
+                            value={
+                              isEditing
+                                ? formData.eligibility.min_age || ''
+                                : scheme.eligibility_criteria.min_age || ''
+                            }
+                            onChange={(e) =>
+                              handleEligibilityChange(
+                                'min_age',
+                                e.target.value ? Number(e.target.value) : null,
+                              )
+                            }
+                            disabled={!isEditing}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="eligibility-max_age">Maximum Age</Label>
+                          <Input
+                            id="eligibility-max_age"
+                            type="number"
+                            value={
+                              isEditing
+                                ? formData.eligibility.max_age || ''
+                                : scheme.eligibility_criteria.max_age || ''
+                            }
+                            onChange={(e) =>
+                              handleEligibilityChange(
+                                'max_age',
+                                e.target.value ? Number(e.target.value) : null,
                               )
                             }
                             disabled={!isEditing}
@@ -560,6 +700,25 @@ export default function SchemeDetailsPage() {
                               disabled
                             />
                           )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="eligibility-caste">Caste</Label>
+                          <Input
+                            id="eligibility-caste"
+                            value={
+                              isEditing
+                                ? formData.eligibility.caste || ''
+                                : scheme.eligibility_criteria.caste || ''
+                            }
+                            onChange={(e) =>
+                              handleEligibilityChange(
+                                'caste',
+                                e.target.value || null,
+                              )
+                            }
+                            disabled={!isEditing}
+                          />
                         </div>
 
                         <div className="space-y-2">
@@ -600,7 +759,7 @@ export default function SchemeDetailsPage() {
                           />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-2 md:col-span-2">
                           <Label htmlFor="eligibility-city">City</Label>
                           <Input
                             id="eligibility-city"
@@ -612,25 +771,6 @@ export default function SchemeDetailsPage() {
                             onChange={(e) =>
                               handleEligibilityChange(
                                 'city',
-                                e.target.value || null,
-                              )
-                            }
-                            disabled={!isEditing}
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="eligibility-caste">Caste</Label>
-                          <Input
-                            id="eligibility-caste"
-                            value={
-                              isEditing
-                                ? formData.eligibility.caste || ''
-                                : scheme.eligibility_criteria.caste || ''
-                            }
-                            onChange={(e) =>
-                              handleEligibilityChange(
-                                'caste',
                                 e.target.value || null,
                               )
                             }
