@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   BarChart3,
   Bell,
@@ -22,6 +22,7 @@ import {
 import { Inter } from 'next/font/google';
 import Image from 'next/image';
 import Link from 'next/link';
+import axios from 'axios';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -49,13 +50,65 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sidebar } from '@/components/sidebar';
 import { usePathname } from 'next/navigation';
+import { getGovernmentId } from '@/app/utils/auth';
 
 const inter = Inter({ subsets: ['latin'] });
+
+interface AccountInfo {
+  id: string;
+  name: string;
+  email: string;
+  created_at: string;
+  updated_at: string;
+  user_type: string;
+  jurisdiction: string;
+  govt_id: string;
+  image_url: string;
+}
+
+interface WalletInfo {
+  balance: number;
+  schemes: string[];
+  transactions: string[];
+}
+
+interface GovernmentResponse {
+  account_info: AccountInfo;
+  wallet_info: WalletInfo;
+}
+
+const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 export default function SettingsPage() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [userDetails, setUserDetails] = useState<AccountInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        const response = await axios.get<GovernmentResponse>(
+          `${API_BASE_URL}/governments/${getGovernmentId()}`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            withCredentials: true
+          }
+        );
+        setUserDetails(response.data.account_info);
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserDetails();
+  }, []);
 
   return (
     <div className={`${inter.className} flex min-h-screen bg-white`}>
@@ -194,10 +247,10 @@ export default function SettingsPage() {
                     <div className="flex flex-col items-center gap-4">
                       <div className="relative">
                         <Image
-                          src="/placeholder.svg?height=100&width=100"
+                          src={userDetails?.image_url || "/placeholder.svg?height=100&width=100"}
                           width={100}
                           height={100}
-                          className="rounded-full"
+                          className="h-24 w-24 rounded-full object-cover"
                           alt="Profile avatar"
                         />
                         <Button
@@ -214,40 +267,38 @@ export default function SettingsPage() {
                       </p>
                     </div>
                     <div className="flex-1 space-y-4">
-                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="first-name">First Name</Label>
-                          <Input
-                            id="first-name"
-                            placeholder="John"
-                            defaultValue="Admin"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="last-name">Last Name</Label>
-                          <Input
-                            id="last-name"
-                            placeholder="Doe"
-                            defaultValue="User"
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Organization Name</Label>
+                        <Input
+                          id="name"
+                          placeholder="Organization Name"
+                          defaultValue={userDetails?.name || ''}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="jurisdiction">Jurisdiction</Label>
+                        <Input
+                          id="jurisdiction"
+                          placeholder="Jurisdiction"
+                          defaultValue={userDetails?.jurisdiction || ''}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="govt_id">Government ID</Label>
+                        <Input
+                          id="govt_id"
+                          placeholder="Government ID"
+                          defaultValue={userDetails?.govt_id || ''}
+                          disabled
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
                         <Input
                           id="email"
                           type="email"
-                          placeholder="john.doe@example.com"
-                          defaultValue="admin@payzee.gov.in"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="role">Role</Label>
-                        <Input
-                          id="role"
-                          placeholder="Administrator"
-                          defaultValue="System Administrator"
-                          disabled
+                          placeholder="organization@example.com"
+                          defaultValue={userDetails?.email || ''}
                         />
                       </div>
                     </div>

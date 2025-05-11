@@ -363,7 +363,7 @@ export default function VendorsPage() {
                                 src={vendor.account_info.image_url}
                                 width={32}
                                 height={32}
-                                className="rounded-full"
+                                className="h-10 w-10 rounded-full object-cover"
                                 alt={vendor.account_info.name}
                               />
                               <div>

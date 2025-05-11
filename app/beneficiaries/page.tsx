@@ -386,9 +386,9 @@ export default function BeneficiariesPage() {
                             <div className="flex items-center gap-3">
                               <Image
                                 src={citizen.account_info.image_url}
-                                width={32}
-                                height={32}
-                                className="rounded-full"
+                                width={40}
+                                height={40}
+                                className="h-10 w-10 rounded-full object-cover"
                                 alt={citizen.account_info.name}
                               />
                               <div>
