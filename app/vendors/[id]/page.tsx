@@ -6,6 +6,8 @@ import axios from 'axios';
 import { ArrowLeft, Menu, Bell, Phone, Mail, MapPin, Building2, CreditCard } from 'lucide-react';
 import { Inter } from 'next/font/google';
 import Image from 'next/image';
+import { getGovernmentId } from '@/app/utils/auth';
+import { Header } from '@/components/header';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,7 +32,6 @@ import { Label } from '@/components/ui/label';
 const inter = Inter({ subsets: ['latin'] });
 
 // Constants
-const GOVERNMENT_ID = '1b7854b9-783b-49d8-b8b3-d4e1e17106c0';
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 // Define types for our API response
@@ -83,15 +84,27 @@ export default function VendorDetailsPage() {
     const fetchVendor = async () => {
       try {
         setIsLoading(true);
+        const governmentId = getGovernmentId();
         const response = await axios.get<ApiVendor>(
-          `${API_BASE_URL}/governments/${GOVERNMENT_ID}/vendors/${vendorId}`,
+          `${API_BASE_URL}/governments/${governmentId}/vendors/${vendorId}`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            withCredentials: true
+          }
         );
 
         setVendor(response.data);
         setError(null);
       } catch (err) {
         console.error('Error fetching vendor:', err);
-        setError('Failed to load vendor details');
+        if (err instanceof Error && err.message.includes('User ID not found in cookies')) {
+          router.push('/login');
+        } else {
+          setError('Failed to load vendor details');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -136,51 +149,7 @@ export default function VendorDetailsPage() {
       {/* Main content */}
       <div className="flex-1 transition-all duration-300">
         {/* Top navbar */}
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-white px-4 sm:px-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setIsMobileOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
-          <div className="flex items-center gap-2 md:hidden">
-            <span className="text-lg font-semibold">PayZee</span>
-          </div>
-          <div className="ml-auto flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="sr-only">Notifications</span>
-              <Badge className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black p-0 text-white">
-                3
-              </Badge>
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Image
-                    src="/placeholder.svg?height=32&width=32"
-                    width={32}
-                    height={32}
-                    className="rounded-full"
-                    alt="Admin avatar"
-                  />
-                  <span className="sr-only">Toggle user menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Logout</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
+        <Header isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
 
         {/* Vendor details content */}
         <main className="p-4 sm:p-6">
@@ -215,7 +184,7 @@ export default function VendorDetailsPage() {
                     src={vendor.account_info.image_url}
                     width={120}
                     height={120}
-                    className="rounded-full"
+                    className="h-24 w-24 rounded-full object-cover"
                     alt={vendor.account_info.name}
                   />
                   <div className="text-center">

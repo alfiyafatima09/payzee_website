@@ -109,14 +109,14 @@ export default function LoginPage() {
         <div className="flex justify-center">
           <Image
             src="/logo.png"
-            alt="PayZee Logo"
+            alt="Payzee Logo"
             width={120}
             height={120}
             className="mx-auto"
           />
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-          Welcome to PayZee
+          Welcome to Payzee
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Sign in to access your account

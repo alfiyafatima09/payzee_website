@@ -98,13 +98,13 @@ export function Sidebar({
           >
             <Image
               src="/logo.png"
-              alt="PayZee Logo"
+              alt="Payzee Logo"
               width={isCollapsed ? 32 : 28}
               height={isCollapsed ? 32 : 28}
               className="object-contain"
             />
             {!isCollapsed && (
-              <span className="text-lg font-semibold">PayZee</span>
+              <span className="text-lg font-semibold">Payzee</span>
             )}
           </div>
           <Button
@@ -158,12 +158,12 @@ export function Sidebar({
               <div className="flex items-center gap-2">
                 <Image
                   src="/logo.png"
-                  alt="PayZee Logo"
+                  alt="Payzee Logo"
                   width={28}
                   height={28}
                   className="object-contain"
                 />
-                <span className="text-lg font-semibold">PayZee</span>
+                <span className="text-lg font-semibold">Payzee</span>
               </div>
             </div>
             <nav className="flex-1 overflow-auto py-4">

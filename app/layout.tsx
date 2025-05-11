@@ -1,11 +1,16 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { SidebarWrapper } from '@/components/SidebarWrapper';
-import { usePathname } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Payzee',
   description: 'A digital payment system',
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
+    ],
+  },
 };
 
 export default function RootLayout({
@@ -13,14 +18,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
-  // Hide sidebar on /auth route
-  const hideSidebar = pathname.startsWith('/auth');
 
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="32x32" />
+      </head>
       <body className="flex">
-        {!hideSidebar && <SidebarWrapper />}
+        <SidebarWrapper />
         <main className="flex-1">{children}</main>
       </body>
     </html>

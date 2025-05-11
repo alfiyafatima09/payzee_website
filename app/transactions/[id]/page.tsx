@@ -128,7 +128,7 @@ export default function TransactionDetailsPage() {
             <span className="sr-only">Toggle menu</span>
           </Button>
           <div className="flex items-center gap-2 md:hidden">
-            <span className="text-lg font-semibold">PayZee</span>
+            <span className="text-lg font-semibold">Payzee</span>
           </div>
           <div className="ml-auto flex items-center gap-4">
             <Button variant="ghost" size="icon" className="relative">

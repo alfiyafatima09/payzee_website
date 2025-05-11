@@ -51,6 +51,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Header } from '@/components/header';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -203,54 +205,29 @@ export default function VendorsPage() {
 
   return (
     <div className={`${inter.className} flex min-h-screen bg-white`}>
-      {/* Main content */}
-      <div className="flex-1 transition-all duration-300">
-        {/* Top navbar */}
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-white px-4 sm:px-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setIsMobileOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
-          <div className="flex items-center gap-2 md:hidden">
-            <span className="text-lg font-semibold">PayZee</span>
-          </div>
-          <div className="ml-auto flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="sr-only">Notifications</span>
-              <Badge className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black p-0 text-white">
-                3
-              </Badge>
+      {/* Mobile sidebar */}
+      <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
+        <SheetContent side="left" className="w-[240px] p-0">
+          <div className="flex h-14 items-center border-b px-3">
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-semibold">Payzee</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto"
+              onClick={() => setIsMobileOpen(false)}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close sidebar</span>
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Image
-                    src="/placeholder.svg?height=32&width=32"
-                    width={32}
-                    height={32}
-                    className="rounded-full"
-                    alt="Admin avatar"
-                  />
-                  <span className="sr-only">Toggle user menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Logout</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
-        </header>
+        </SheetContent>
+      </Sheet>
+
+      {/* Main content */}
+      <div className={`flex-1 transition-all duration-300`}>
+        <Header isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
 
         {/* Vendors content */}
         <main className="p-4 sm:p-6">

@@ -11,10 +11,14 @@ import {
   Search,
   Trash2,
   X,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Inter } from 'next/font/google';
 import Image from 'next/image';
-import { toast } from '@/components/ui/use-toast';
+import Link from 'next/link';
+import { toast, useToast } from '@/components/ui/use-toast';
 import { getGovernmentId } from '@/app/utils/auth';
 
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +57,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useRouter } from 'next/navigation';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Header } from '@/components/header';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -120,6 +126,7 @@ export default function SchemesPage() {
   const [error, setError] = useState<string | null>(null);
   const itemsPerPage = 10;
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { toast } = useToast();
 
   // Fetch schemes from API
   const fetchSchemes = async () => {
@@ -257,56 +264,75 @@ export default function SchemesPage() {
   const tableRef = useRef<HTMLTableElement>(null);
   const router = useRouter();
 
+  // Handle soft delete
+  const handleSoftDelete = async (schemeId: string) => {
+    try {
+      setIsLoading(true);
+      const governmentId = getGovernmentId();
+      const response = await axios.delete<SchemeResponse>(
+        `${API_BASE_URL}/governments/${governmentId}/schemes/${schemeId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          withCredentials: true
+        }
+      );
+
+      if (response.data.scheme_id) {
+        // Update local state to reflect the deletion
+        setSchemes(schemes.map(scheme => 
+          scheme.id === schemeId 
+            ? { ...scheme, status: 'inactive' }
+            : scheme
+        ));
+        toast({
+          title: "Success",
+          description: "Scheme has been soft deleted",
+        });
+      }
+    } catch (err) {
+      console.error('Error soft deleting scheme:', err);
+      if (err instanceof Error && err.message.includes('User ID not found in cookies')) {
+        router.push('/login');
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to soft delete scheme",
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className={`${inter.className} flex min-h-screen bg-white`}>
-      {/* Main content */}
-      <div className="flex-1 transition-all duration-300">
-        {/* Top navbar */}
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-white px-4 sm:px-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setIsMobileOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
-          <div className="flex items-center gap-2 md:hidden">
-            <span className="text-lg font-semibold">PayZee</span>
-          </div>
-          <div className="ml-auto flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="sr-only">Notifications</span>
-              <Badge className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black p-0 text-white">
-                3
-              </Badge>
+      {/* Mobile sidebar */}
+      <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
+        <SheetContent side="left" className="w-[240px] p-0">
+          <div className="flex h-14 items-center border-b px-3">
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-semibold">Payzee</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto"
+              onClick={() => setIsMobileOpen(false)}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close sidebar</span>
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Image
-                    src="/placeholder.svg?height=32&width=32"
-                    width={32}
-                    height={32}
-                    className="rounded-full"
-                    alt="Admin avatar"
-                  />
-                  <span className="sr-only">Toggle user menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Logout</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
-        </header>
+        </SheetContent>
+      </Sheet>
+
+      {/* Main content */}
+      <div className={`flex-1 transition-all duration-300`}>
+        <Header isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
 
         {/* Schemes content */}
         <main className="p-4 sm:p-6">
@@ -480,8 +506,9 @@ export default function SchemesPage() {
                                 className="h-8 w-8 text-gray-500 hover:text-red-500"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  // Delete functionality would go here
+                                  handleSoftDelete(scheme.id);
                                 }}
+                                disabled={isLoading || scheme.status === 'inactive'}
                               >
                                 <Trash2 className="h-4 w-4" />
                                 <span className="sr-only">Delete</span>

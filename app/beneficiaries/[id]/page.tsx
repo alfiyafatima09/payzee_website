@@ -217,7 +217,7 @@ export default function BeneficiaryDetailsPage({
             <span className="sr-only">Toggle menu</span>
           </Button>
           <div className="flex items-center gap-2 md:hidden">
-            <span className="text-lg font-semibold">PayZee</span>
+            <span className="text-lg font-semibold">Payzee</span>
           </div>
           <div className="ml-auto flex items-center gap-4">
             <Button variant="ghost" size="icon" className="relative">
@@ -283,7 +283,7 @@ export default function BeneficiaryDetailsPage({
                     src={beneficiary.account_info.image_url}
                     width={80}
                     height={80}
-                    className="rounded-full"
+                    className="h-12 w-12 rounded-full object-cover"
                     alt={beneficiary.account_info.name}
                   />
                   <div>

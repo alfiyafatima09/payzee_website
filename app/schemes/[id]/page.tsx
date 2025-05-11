@@ -3,10 +3,12 @@
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
-import { ArrowLeft, Menu, Save, Bell } from 'lucide-react';
+import { ArrowLeft, Menu, Save, Bell, Trash2 } from 'lucide-react';
 import { Inter } from 'next/font/google';
 import Image from 'next/image';
 import { useToast } from "@/components/ui/use-toast";
+import { Header } from '@/components/header';
+import { getGovernmentId } from '@/app/utils/auth';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,7 +44,6 @@ import { Textarea } from '@/components/ui/textarea';
 const inter = Inter({ subsets: ['latin'] });
 
 // Constants
-const GOVERNMENT_ID = '1b7854b9-783b-49d8-b8b3-d4e1e17106c0';
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 // Define types for our scheme data
@@ -58,18 +59,32 @@ interface EligibilityCriteria {
   annual_income: number | null;
 }
 
+interface SchemeResponse {
+  message: string;
+  scheme_id: string;
+}
+
 interface ApiScheme {
   id: string;
   name: string;
   description: string;
-  govt_id: string;
   amount: number;
   status: string;
+  govt_id: string;
   created_at: string;
   updated_at: string;
-  eligibility_criteria: EligibilityCriteria;
+  eligibility_criteria: {
+    occupation: string | null;
+    min_age: number | null;
+    max_age: number | null;
+    gender: string | null;
+    state: string | null;
+    district: string | null;
+    city: string | null;
+    caste: string | null;
+    annual_income: number | null;
+  };
   tags: string[];
-  beneficiaries: any[];
 }
 
 interface FormDataType {
@@ -129,8 +144,16 @@ export default function SchemeDetailsPage() {
     const fetchScheme = async () => {
       try {
         setIsLoading(true);
+        const governmentId = getGovernmentId();
         const response = await axios.get<ApiScheme>(
-          `${API_BASE_URL}/governments/${GOVERNMENT_ID}/schemes/${schemeId}`,
+          `${API_BASE_URL}/governments/${governmentId}/schemes/${schemeId}`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            withCredentials: true
+          }
         );
 
         const fetchedScheme = response.data;
@@ -158,7 +181,11 @@ export default function SchemeDetailsPage() {
         setError(null);
       } catch (err) {
         console.error('Error fetching scheme:', err);
-        setError('Failed to load scheme details');
+        if (err instanceof Error && err.message.includes('User ID not found in cookies')) {
+          router.push('/login');
+        } else {
+          setError('Failed to load scheme details');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -234,9 +261,17 @@ export default function SchemeDetailsPage() {
       };
 
       // Make API call to update the scheme
+      const governmentId = getGovernmentId();
       await axios.put(
-        `${API_BASE_URL}/governments/${GOVERNMENT_ID}/schemes/${schemeId}`,
+        `${API_BASE_URL}/governments/${governmentId}/schemes/${schemeId}`,
         updatePayload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          withCredentials: true
+        }
       );
 
       if (scheme) {
@@ -260,12 +295,60 @@ export default function SchemeDetailsPage() {
       });
     } catch (err) {
       console.error('Error updating scheme:', err);
-      setError('Failed to update scheme');
-      toast({
-        title: "Error",
-        description: "Failed to update scheme",
-        variant: "destructive",
-      });
+      if (err instanceof Error && err.message.includes('User ID not found in cookies')) {
+        router.push('/login');
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to update scheme",
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle soft delete
+  const handleSoftDelete = async () => {
+    try {
+      setIsLoading(true);
+      const governmentId = getGovernmentId();
+      const response = await axios.delete<SchemeResponse>(
+        `${API_BASE_URL}/governments/${governmentId}/schemes/${schemeId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          withCredentials: true
+        }
+      );
+
+      if (response.data.scheme_id && scheme) {
+        // Update local state to reflect the deletion
+        const updatedScheme: ApiScheme = {
+          ...scheme,
+          status: 'inactive'
+        };
+        setScheme(updatedScheme);
+        toast({
+          title: "Success",
+          description: "Scheme has been soft deleted",
+        });
+        router.push('/schemes');
+      }
+    } catch (err) {
+      console.error('Error soft deleting scheme:', err);
+      if (err instanceof Error && err.message.includes('User ID not found in cookies')) {
+        router.push('/login');
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to soft delete scheme",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -329,51 +412,7 @@ export default function SchemeDetailsPage() {
       {/* Main content */}
       <div className={`flex-1 transition-all duration-300`}>
         {/* Top navbar */}
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-white px-4 sm:px-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setIsMobileOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
-          <div className="flex items-center gap-2 md:hidden">
-            <span className="text-lg font-semibold">PayZee</span>
-          </div>
-          <div className="ml-auto flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="sr-only">Notifications</span>
-              <Badge className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black p-0 text-white">
-                3
-              </Badge>
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Image
-                    src="/placeholder.svg?height=32&width=32"
-                    width={32}
-                    height={32}
-                    className="rounded-full"
-                    alt="Admin avatar"
-                  />
-                  <span className="sr-only">Toggle user menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Logout</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
+        <Header isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
 
         {/* Scheme details content */}
         <main className="p-4 sm:p-6">
@@ -393,12 +432,22 @@ export default function SchemeDetailsPage() {
             </div>
             <div className="flex gap-2">
               {!isEditing ? (
-                <Button
-                  className="bg-[#2563EB] hover:bg-[#1d4ed8]"
-                  onClick={() => setIsEditing(true)}
-                >
-                  Edit Scheme
-                </Button>
+                <>
+                  <Button
+                    className="bg-[#2563EB] hover:bg-[#1d4ed8]"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    Edit Scheme
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleSoftDelete}
+                    disabled={isLoading || scheme.status === 'inactive'}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Scheme
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button
@@ -456,9 +505,17 @@ export default function SchemeDetailsPage() {
                             ...scheme,
                             status: value,
                           };
+                          const governmentId = getGovernmentId();
                           await axios.put(
-                            `${API_BASE_URL}/governments/${GOVERNMENT_ID}/schemes/${schemeId}`,
+                            `${API_BASE_URL}/governments/${governmentId}/schemes/${schemeId}`,
                             updatePayload,
+                            {
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                              },
+                              withCredentials: true
+                            }
                           );
                           setScheme({
                             ...scheme,
@@ -466,17 +523,19 @@ export default function SchemeDetailsPage() {
                           });
                           toast({
                             title: "Success",
-                            description: `Scheme ${value === 'active' ? 'activated' : 'deactivated'} successfully`,
+                            description: "Scheme status updated successfully",
                           });
                         } catch (err) {
                           console.error('Error updating scheme status:', err);
-                          toast({
-                            title: "Error",
-                            description: "Failed to update scheme status",
-                            variant: "destructive",
-                          });
-                        } finally {
-                          setIsLoading(false);
+                          if (err instanceof Error && err.message.includes('User ID not found in cookies')) {
+                            router.push('/login');
+                          } else {
+                            toast({
+                              variant: "destructive",
+                              title: "Error",
+                              description: "Failed to update scheme status",
+                            });
+                          }
                         }
                       }}
                     >
@@ -488,6 +547,52 @@ export default function SchemeDetailsPage() {
                         <SelectItem value="inactive">Inactive</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const updatePayload = {
+                            ...scheme,
+                            status: scheme.status,
+                          };
+                          const governmentId = getGovernmentId();
+                          await axios.put(
+                            `${API_BASE_URL}/governments/${governmentId}/schemes/${schemeId}`,
+                            updatePayload,
+                            {
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                              },
+                              withCredentials: true
+                            }
+                          );
+                          setScheme({
+                            ...scheme,
+                            status: scheme.status,
+                          });
+                          toast({
+                            title: "Success",
+                            description: "Scheme status updated successfully",
+                          });
+                        } catch (err) {
+                          console.error('Error updating scheme status:', err);
+                          if (err instanceof Error && err.message.includes('User ID not found in cookies')) {
+                            router.push('/login');
+                          } else {
+                            toast({
+                              variant: "destructive",
+                              title: "Error",
+                              description: "Failed to update scheme status",
+                            });
+                          }
+                        }
+                      }}
+                    >
+                      <Save className="h-4 w-4" />
+                      <span className="sr-only">Save</span>
+                    </Button>
                   </div>
                 )}
               </div>

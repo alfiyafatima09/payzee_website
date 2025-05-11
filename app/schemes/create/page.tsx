@@ -40,8 +40,13 @@ import { Textarea } from '@/components/ui/textarea';
 const inter = Inter({ subsets: ['latin'] });
 
 // Constants
-const GOVERNMENT_ID = '1b7854b9-783b-49d8-b8b3-d4e1e17106c0';
+const GOVERNMENT_ID = '18278f37-44dd-4ec3-9459-d22961c0ee33';
 const API_BASE_URL = 'http://localhost:8000/api/v1';
+
+interface SchemeResponse {
+  message: string;
+  scheme_id: string;
+}
 
 export default function CreateSchemePage() {
   const router = useRouter();
@@ -56,15 +61,15 @@ export default function CreateSchemePage() {
     amount: 0,
     status: 'active',
     eligibility: {
-      occupation: null,
-      min_age: null,
-      max_age: null,
-      gender: null,
-      state: null,
-      district: null,
-      city: null,
-      caste: null,
-      annual_income: null,
+      occupation: null as string | null,
+      min_age: null as number | null,
+      max_age: null as number | null,
+      gender: null as string | null,
+      state: null as string | null,
+      district: null as string | null,
+      city: null as string | null,
+      caste: null as string | null,
+      annual_income: null as number | null,
       tags: [] as string[],
     },
   });
@@ -83,7 +88,7 @@ export default function CreateSchemePage() {
   // Handle eligibility field changes
   const handleEligibilityChange = (
     field: keyof typeof formData.eligibility,
-    value: string | null | string[],
+    value: string | number | null | string[],
   ) => {
     setFormData({
       ...formData,
@@ -138,16 +143,20 @@ export default function CreateSchemePage() {
       };
 
       // Make API call to create the scheme
-      await axios.post(
+      const response = await axios.post<SchemeResponse>(
         `${API_BASE_URL}/governments/${GOVERNMENT_ID}/schemes`,
         schemePayload,
       );
 
-      // Redirect to schemes page on success
-      router.push('/schemes');
+      if (response.data.scheme_id) {
+        // Redirect to schemes page on success
+        router.push('/schemes');
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (err) {
       console.error('Error creating scheme:', err);
-      setError('Failed to create scheme');
+      setError('Failed to create scheme. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -195,7 +204,7 @@ export default function CreateSchemePage() {
             <span className="sr-only">Toggle menu</span>
           </Button>
           <div className="flex items-center gap-2 md:hidden">
-            <span className="text-lg font-semibold">PayZee</span>
+            <span className="text-lg font-semibold">Payzee</span>
           </div>
           <div className="ml-auto flex items-center gap-4">
             <Button variant="ghost" size="icon" className="relative">

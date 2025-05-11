@@ -94,7 +94,7 @@ export default function RegisterPage() {
         <div className="flex justify-center">
           <Image
             src="/logo.png"
-            alt="PayZee Logo"
+            alt="Payzee Logo"
             width={120}
             height={120}
             className="mx-auto"
@@ -104,7 +104,7 @@ export default function RegisterPage() {
           Create your account
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Sign up to get started with PayZee
+          Sign up to get started with Payzee
         </p>
       </div>
 
