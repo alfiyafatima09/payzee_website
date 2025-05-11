@@ -4,8 +4,8 @@ import { SidebarWrapper } from '@/components/SidebarWrapper';
 import { usePathname } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'PayZee',
-  description: 'Created by Payzee'
+  title: 'Payzee',
+  description: 'A digital payment system',
 };
 
 export default function RootLayout({

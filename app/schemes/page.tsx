@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { Inter } from 'next/font/google';
 import Image from 'next/image';
+import { toast } from '@/components/ui/use-toast';
+import { getGovernmentId } from '@/app/utils/auth';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -55,7 +57,6 @@ import { useRouter } from 'next/navigation';
 const inter = Inter({ subsets: ['latin'] });
 
 // Constants
-const GOVERNMENT_ID = '1b7854b9-783b-49d8-b8b3-d4e1e17106c0';
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 // Define types for our API response
@@ -121,53 +122,65 @@ export default function SchemesPage() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   // Fetch schemes from API
-  useEffect(() => {
-    const fetchSchemes = async () => {
-      try {
-        setIsLoading(true);
-        const response = await axios.get<ApiScheme[]>(
-          `${API_BASE_URL}/governments/${GOVERNMENT_ID}/schemes`,
-        );
-
-        // Transform API data to match component structure
-        const transformedSchemes = response.data.map((scheme) => ({
-          id: scheme.id,
-          name: scheme.name,
-          description: scheme.description,
-          amount: scheme.amount,
-          launchDate: new Date(scheme.created_at).toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-          }),
-          targetGroup: scheme.tags?.join(', ') || 'All',
-          fundAllocated: `₹${scheme.amount.toLocaleString('en-IN')}`,
-          status: scheme.status,
-          eligibility: {
-            occupation: scheme.eligibility_criteria?.occupation || null,
-            minAge: scheme.eligibility_criteria?.min_age || null,
-            maxAge: scheme.eligibility_criteria?.max_age || null,
-            gender: scheme.eligibility_criteria?.gender || null,
-            state: scheme.eligibility_criteria?.state || null,
-            district: scheme.eligibility_criteria?.district || null,
-            city: scheme.eligibility_criteria?.city || null,
-            caste: scheme.eligibility_criteria?.caste || null,
-            annualIncome: scheme.eligibility_criteria?.annual_income || null,
-            tags: scheme.tags || [],
+  const fetchSchemes = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get<ApiScheme[]>(
+        `${API_BASE_URL}/governments/${getGovernmentId()}/schemes`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
           },
-          createdAt: new Date(scheme.created_at).toLocaleDateString('en-IN'),
-        }));
+          withCredentials: true
+        }
+      );
 
-        setSchemes(transformedSchemes);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching schemes:', err);
-        setError('Failed to load schemes');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      // Transform API data to match component structure
+      const transformedSchemes = response.data.map((scheme) => ({
+        id: scheme.id,
+        name: scheme.name,
+        description: scheme.description,
+        amount: scheme.amount,
+        launchDate: new Date(scheme.created_at).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        }),
+        targetGroup: scheme.tags?.join(', ') || 'All',
+        fundAllocated: `₹${scheme.amount.toLocaleString('en-IN')}`,
+        status: scheme.status,
+        eligibility: {
+          occupation: scheme.eligibility_criteria?.occupation || null,
+          minAge: scheme.eligibility_criteria?.min_age || null,
+          maxAge: scheme.eligibility_criteria?.max_age || null,
+          gender: scheme.eligibility_criteria?.gender || null,
+          state: scheme.eligibility_criteria?.state || null,
+          district: scheme.eligibility_criteria?.district || null,
+          city: scheme.eligibility_criteria?.city || null,
+          caste: scheme.eligibility_criteria?.caste || null,
+          annualIncome: scheme.eligibility_criteria?.annual_income || null,
+          tags: scheme.tags || [],
+        },
+        createdAt: new Date(scheme.created_at).toLocaleDateString('en-IN'),
+      }));
 
+      setSchemes(transformedSchemes);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching schemes:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to fetch schemes. Please try again.',
+      });
+      setError('Failed to load schemes');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchSchemes();
   }, []);
 

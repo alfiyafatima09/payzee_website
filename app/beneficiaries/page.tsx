@@ -13,6 +13,8 @@ import {
 import { Inter } from 'next/font/google';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { toast } from '@/components/ui/use-toast';
+import { getGovernmentId } from '@/app/utils/auth';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -53,7 +55,6 @@ import {
 const inter = Inter({ subsets: ['latin'] });
 
 // Constants
-const GOVERNMENT_ID = '1b7854b9-783b-49d8-b8b3-d4e1e17106c0';
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 // Define types for our API response
@@ -108,28 +109,43 @@ export default function BeneficiariesPage() {
   const itemsPerPage = 10;
   const router = useRouter();
 
-  // Fetch citizens from API
+  const fetchBeneficiaries = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get<ApiCitizen[]>(
+        `${API_BASE_URL}/governments/${getGovernmentId()}/citizens`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          withCredentials: true
+        }
+      );
+      
+      // Filter citizens who have at least one scheme
+      const beneficiaries = response.data.filter(citizen => 
+        citizen.scheme_info && citizen.scheme_info.length > 0
+      );
+      
+      setCitizens(beneficiaries);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching beneficiaries:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to fetch beneficiaries. Please try again.',
+      });
+      setError('Failed to load beneficiaries');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add useEffect to fetch beneficiaries when component mounts
   useEffect(() => {
-    const fetchCitizens = async () => {
-      try {
-        setIsLoading(true);
-        const response = await axios.get<ApiCitizen[]>(
-          `${API_BASE_URL}/governments/${GOVERNMENT_ID}/citizens`,
-        );
-
-        // Filter citizens who have schemes
-        const beneficiaries = response.data.filter(citizen => citizen.scheme_info && citizen.scheme_info.length > 0);
-        setCitizens(beneficiaries);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching beneficiaries:', err);
-        setError('Failed to load beneficiaries');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCitizens();
+    fetchBeneficiaries();
   }, []);
 
   // Filter beneficiaries based on occupation and search query
@@ -323,33 +339,33 @@ export default function BeneficiariesPage() {
             <>
               {/* Beneficiaries table */}
               <div className="mb-6 overflow-hidden rounded-lg border shadow-sm">
-                <Table>
-                  <TableHeader className="bg-[#F5F5F5]">
-                    <TableRow>
-                      <TableHead className="text-xs font-semibold uppercase">
+            <Table>
+              <TableHeader className="bg-[#F5F5F5]">
+                <TableRow>
+                  <TableHead className="text-xs font-semibold uppercase">
                         Beneficiary
                       </TableHead>
                       <TableHead className="text-xs font-semibold uppercase">
                         ID Number
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold uppercase">
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase">
                         Occupation
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold uppercase">
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase">
                         Annual Income
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold uppercase">
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase">
                         Govt. Wallet
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold uppercase">
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase">
                         Schemes
-                      </TableHead>
-                      <TableHead className="text-right text-xs font-semibold uppercase">
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                  </TableHead>
+                  <TableHead className="text-right text-xs font-semibold uppercase">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                     {filteredBeneficiaries.length === 0 ? (
                       <TableRow>
                         <TableCell
@@ -362,10 +378,10 @@ export default function BeneficiariesPage() {
                       </TableRow>
                     ) : (
                       currentBeneficiaries.map((citizen) => (
-                        <TableRow
+                  <TableRow
                           key={citizen.account_info.id}
                           className="cursor-pointer transition-colors hover:bg-[#EEEEEE]"
-                        >
+                  >
                           <TableCell className="py-4">
                             <div className="flex items-center gap-3">
                               <Image
@@ -394,86 +410,86 @@ export default function BeneficiariesPage() {
                           </TableCell>
                           <TableCell className="py-4">
                             ₹{citizen.personal_info.annual_income.toLocaleString('en-IN')}
-                          </TableCell>
-                          <TableCell className="py-4">
+                    </TableCell>
+                    <TableCell className="py-4">
                             ₹{citizen.wallet_info.govt_wallet.balance.toLocaleString('en-IN')}
-                          </TableCell>
-                          <TableCell className="py-4">
+                    </TableCell>
+                    <TableCell className="py-4">
                             <Badge variant="secondary">
                               {citizen.scheme_info?.length || 0} Schemes
                             </Badge>
-                          </TableCell>
-                          <TableCell className="py-4 text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-gray-500 hover:text-[#2563EB]"
+                    </TableCell>
+                    <TableCell className="py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-gray-500 hover:text-[#2563EB]"
                                 onClick={() => router.push(`/beneficiaries/${citizen.account_info.id}`)}
-                              >
+                        >
                                 <Eye className="h-4 w-4" />
                                 <span className="sr-only">View</span>
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                       ))
                     )}
-                  </TableBody>
-                </Table>
-              </div>
+              </TableBody>
+            </Table>
+          </div>
 
-              {/* Pagination */}
+          {/* Pagination */}
               {filteredBeneficiaries.length > 0 && (
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (currentPage > 1) handlePageChange(currentPage - 1);
-                        }}
-                        className={
-                          currentPage === 1 ? 'pointer-events-none opacity-50' : ''
-                        }
-                      />
-                    </PaginationItem>
-                    {getPageNumbers().map((page, index) => (
-                      <PaginationItem key={index}>
-                        {page === '...' ? (
-                          <PaginationEllipsis />
-                        ) : (
-                          <PaginationLink
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handlePageChange(page as number);
-                            }}
-                            isActive={currentPage === page}
-                          >
-                            {page}
-                          </PaginationLink>
-                        )}
-                      </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                      <PaginationNext
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (currentPage < totalPages)
-                            handlePageChange(currentPage + 1);
-                        }}
-                        className={
-                          currentPage === totalPages
-                            ? 'pointer-events-none opacity-50'
-                            : ''
-                        }
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage > 1) handlePageChange(currentPage - 1);
+                  }}
+                  className={
+                    currentPage === 1 ? 'pointer-events-none opacity-50' : ''
+                  }
+                />
+              </PaginationItem>
+              {getPageNumbers().map((page, index) => (
+                <PaginationItem key={index}>
+                  {page === '...' ? (
+                    <PaginationEllipsis />
+                  ) : (
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handlePageChange(page as number);
+                      }}
+                      isActive={currentPage === page}
+                    >
+                      {page}
+                    </PaginationLink>
+                  )}
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage < totalPages)
+                      handlePageChange(currentPage + 1);
+                  }}
+                  className={
+                    currentPage === totalPages
+                      ? 'pointer-events-none opacity-50'
+                      : ''
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
               )}
             </>
           )}

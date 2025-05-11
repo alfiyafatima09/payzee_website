@@ -22,6 +22,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { toast } from '@/components/ui/use-toast';
+import { getGovernmentId } from '@/app/utils/auth';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -64,7 +66,6 @@ import { Sidebar } from '@/components/sidebar';
 const inter = Inter({ subsets: ['latin'] });
 
 // Constants
-const GOVERNMENT_ID = '1b7854b9-783b-49d8-b8b3-d4e1e17106c0';
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 // Define types for our API response
@@ -107,41 +108,53 @@ export default function TransactionsPage() {
   const router = useRouter();
 
   // Fetch transactions from API
+  const fetchTransactions = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get<ApiTransaction[]>(
+        `${API_BASE_URL}/governments/${getGovernmentId()}/transactions`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          withCredentials: true
+        }
+      );
+
+      // Transform API data to match component structure
+      const transformedTransactions = response.data.map((transaction) => ({
+        id: transaction.id,
+        fromId: transaction.from_id,
+        toId: transaction.to_id,
+        amount: transaction.amount,
+        type: transaction.tx_type,
+        schemeId: transaction.scheme_id,
+        description: transaction.description,
+        date: new Date(transaction.timestamp).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        }),
+        status: transaction.status,
+      }));
+
+      setTransactions(transformedTransactions);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to fetch transactions. Please try again.',
+      });
+      setError('Failed to load transactions');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        setIsLoading(true);
-        const response = await axios.get<ApiTransaction[]>(
-          `${API_BASE_URL}/governments/${GOVERNMENT_ID}/transactions`,
-        );
-
-        // Transform API data to match component structure
-        const transformedTransactions = response.data.map((transaction) => ({
-          id: transaction.id,
-          fromId: transaction.from_id,
-          toId: transaction.to_id,
-          amount: transaction.amount,
-          type: transaction.tx_type,
-          schemeId: transaction.scheme_id,
-          description: transaction.description,
-          date: new Date(transaction.timestamp).toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-          }),
-          status: transaction.status,
-        }));
-
-        setTransactions(transformedTransactions);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching transactions:', err);
-        setError('Failed to load transactions');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchTransactions();
   }, []);
 
@@ -366,16 +379,16 @@ export default function TransactionsPage() {
                   </TableRow>
                 ) : (
                   currentTransactions.map((transaction) => (
-                    <TableRow
-                      key={transaction.id}
+                  <TableRow
+                    key={transaction.id}
                       className={`cursor-pointer transition-colors hover:bg-[#EEEEEE] ${
                         transaction.status === 'failed' ? 'opacity-75' : ''
                       }`}
-                    >
-                      <TableCell className="py-4 font-medium">
-                        {transaction.id}
-                      </TableCell>
-                      <TableCell className="py-4">
+                  >
+                    <TableCell className="py-4 font-medium">
+                      {transaction.id}
+                    </TableCell>
+                    <TableCell className="py-4">
                         {transaction.description}
                       </TableCell>
                       <TableCell className="py-4">
@@ -385,11 +398,11 @@ export default function TransactionsPage() {
                       </TableCell>
                       <TableCell className="py-4">
                         ₹{transaction.amount.toLocaleString('en-IN')}
-                      </TableCell>
-                      <TableCell className="py-4">
+                    </TableCell>
+                    <TableCell className="py-4">
                         {transaction.date}
-                      </TableCell>
-                      <TableCell className="py-4">
+                    </TableCell>
+                    <TableCell className="py-4">
                         <Badge
                           variant="outline"
                           className={`${
@@ -402,8 +415,8 @@ export default function TransactionsPage() {
                         >
                           {transaction.status.charAt(0).toUpperCase() +
                             transaction.status.slice(1)}
-                        </Badge>
-                      </TableCell>
+                      </Badge>
+                    </TableCell>
                       <TableCell className="py-4 text-right">
                         <div className="flex justify-end gap-2">
                           <Button
@@ -417,7 +430,7 @@ export default function TransactionsPage() {
                           </Button>
                         </div>
                       </TableCell>
-                    </TableRow>
+                  </TableRow>
                   ))
                 )}
               </TableBody>

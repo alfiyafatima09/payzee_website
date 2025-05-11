@@ -19,6 +19,8 @@ import {
 import { Inter } from 'next/font/google';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { toast } from '@/components/ui/use-toast';
+import { getGovernmentId } from '@/app/utils/auth';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -49,7 +51,6 @@ import {
 const inter = Inter({ subsets: ['latin'] });
 
 // Constants
-const GOVERNMENT_ID = '1b7854b9-783b-49d8-b8b3-d4e1e17106c0';
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 // Define types for our API response
@@ -120,33 +121,56 @@ export default function BeneficiaryDetailsPage({
     const fetchBeneficiaryDetails = async () => {
       try {
         setIsLoading(true);
-        const [beneficiaryResponse, schemesResponse] = await Promise.all([
-          axios.get<ApiCitizen>(
-            `${API_BASE_URL}/governments/${GOVERNMENT_ID}/citizens/${resolvedParams.id}`,
-          ),
-          axios.get<Scheme[]>(
-            `${API_BASE_URL}/governments/${GOVERNMENT_ID}/schemes`,
-          ),
-        ]);
-
-        setBeneficiary(beneficiaryResponse.data);
-        
-        // Filter schemes that the beneficiary is enrolled in
-        const enrolledSchemes = schemesResponse.data.filter(scheme => 
-          beneficiaryResponse.data.scheme_info?.includes(scheme.id)
+        const response = await axios.get(
+          `${API_BASE_URL}/governments/${getGovernmentId()}/citizens/${resolvedParams.id}`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            withCredentials: true
+          }
         );
-        setSchemes(enrolledSchemes);
-        
+        setBeneficiary(response.data);
         setError(null);
-      } catch (err) {
-        console.error('Error fetching beneficiary details:', err);
+      } catch (error) {
+        console.error('Error fetching beneficiary details:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to fetch beneficiary details. Please try again.',
+        });
         setError('Failed to load beneficiary details');
       } finally {
         setIsLoading(false);
       }
     };
 
+    const fetchSchemes = async () => {
+      try {
+        const response = await axios.get(
+          `${API_BASE_URL}/governments/${getGovernmentId()}/schemes`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            withCredentials: true
+          }
+        );
+        setSchemes(response.data);
+      } catch (error) {
+        console.error('Error fetching schemes:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to fetch schemes. Please try again.',
+        });
+      }
+    };
+
     fetchBeneficiaryDetails();
+    fetchSchemes();
   }, [resolvedParams.id]);
 
   if (isLoading) {

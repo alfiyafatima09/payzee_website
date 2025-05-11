@@ -13,6 +13,8 @@ import {
 import { Inter } from 'next/font/google';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { toast } from '@/components/ui/use-toast';
+import { getGovernmentId } from '@/app/utils/auth';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -53,7 +55,6 @@ import {
 const inter = Inter({ subsets: ['latin'] });
 
 // Constants
-const GOVERNMENT_ID = '1b7854b9-783b-49d8-b8b3-d4e1e17106c0';
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 // Define types for our API response
@@ -100,24 +101,35 @@ export default function VendorsPage() {
   const router = useRouter();
 
   // Fetch vendors from API
+  const fetchVendors = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get<ApiVendor[]>(
+        `${API_BASE_URL}/governments/${getGovernmentId()}/vendors`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          withCredentials: true
+        }
+      );
+      setVendors(response.data);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching vendors:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to fetch vendors. Please try again.',
+      });
+      setError('Failed to load vendors');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchVendors = async () => {
-      try {
-        setIsLoading(true);
-        const response = await axios.get<ApiVendor[]>(
-          `${API_BASE_URL}/governments/${GOVERNMENT_ID}/vendors`,
-        );
-
-        setVendors(response.data);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching vendors:', err);
-        setError('Failed to load vendors');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchVendors();
   }, []);
 

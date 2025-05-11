@@ -430,19 +430,19 @@ export default function SchemeDetailsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-xl">{scheme.name}</CardTitle>
-                  <CardDescription>
-                    <Badge
-                      variant="outline"
-                      className={`${
-                        scheme.status === 'active'
-                          ? 'border-green-200 bg-green-50 text-green-700'
-                          : 'border-gray-200 bg-gray-50 text-gray-700'
-                      }`}
-                    >
-                      {scheme.status.charAt(0).toUpperCase() +
-                        scheme.status.slice(1)}
-                    </Badge>
-                  </CardDescription>
+              <CardDescription>
+                <Badge
+                  variant="outline"
+                  className={`${
+                    scheme.status === 'active'
+                      ? 'border-green-200 bg-green-50 text-green-700'
+                      : 'border-gray-200 bg-gray-50 text-gray-700'
+                  }`}
+                >
+                  {scheme.status.charAt(0).toUpperCase() +
+                    scheme.status.slice(1)}
+                </Badge>
+              </CardDescription>
                 </div>
                 {!isEditing && (
                   <div className="flex items-center gap-2">

@@ -19,6 +19,7 @@ import {
 import { Inter } from 'next/font/google';
 import Image from 'next/image';
 import Link from 'next/link';
+import axios from 'axios';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -33,6 +34,7 @@ import {
 } from 'chart.js';
 import { Line, Pie } from 'react-chartjs-2';
 import { motion } from 'framer-motion';
+import { getGovernmentId } from '@/app/utils/auth';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -71,102 +73,131 @@ ChartJS.register(
 );
 
 const inter = Inter({ subsets: ['latin'] });
+const API_BASE_URL = 'http://localhost:8000/api/v1';
 
-// Define the type for scheme data
-interface SchemeData {
+interface Scheme {
+  id: string;
   name: string;
-  value: number;
-  tags: string[];
-}
-
-interface MonthlyData {
-  name: string;
+  description: string;
   amount: number;
+  status: string;
+  tags: string[];
+  beneficiaries: any[];
+  created_at: string;
+  updated_at: string;
 }
 
-interface FilterData {
-  value: number;
-  color: string;
+interface Citizen {
+  id: string;
+  name: string;
+  scheme_info: any[];
+  // ... other citizen fields
+}
+
+interface DashboardStats {
+  totalSchemes: number;
+  totalBeneficiaries: number;
+  totalFundAllocated: number;
+  pendingApprovals: number;
+  schemesByTag: {
+    name: string;
+    value: number;
+    tags: string[];
+  }[];
+  monthlyData: {
+    name: string;
+    amount: number;
+  }[];
 }
 
 export default function Dashboard() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalSchemes: 0,
+    totalBeneficiaries: 0,
+    totalFundAllocated: 0,
+    pendingApprovals: 0,
+    schemesByTag: [],
+    monthlyData: [],
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Sample data for charts
-  const monthlyData: MonthlyData[] = [
-    { name: 'Jan', amount: 4000 },
-    { name: 'Feb', amount: 3000 },
-    { name: 'Mar', amount: 5000 },
-    { name: 'Apr', amount: 4500 },
-    { name: 'May', amount: 6000 },
-    { name: 'Jun', amount: 5500 },
-    { name: 'Jul', amount: 7000 },
-    { name: 'Aug', amount: 8000 },
-    { name: 'Sep', amount: 7500 },
-    { name: 'Oct', amount: 9000 },
-    { name: 'Nov', amount: 8500 },
-    { name: 'Dec', amount: 10000 },
-  ];
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch all schemes
+        const { data: schemes } = await axios.get<Scheme[]>(`${API_BASE_URL}/governments/${getGovernmentId()}/schemes`);
 
-  // Sample data with tags
-  const schemesByTag: SchemeData[] = [
-    { name: "Girls' Education", value: 25, tags: ['education', 'girls'] },
-    { name: 'Farmer Support', value: 30, tags: ['farmers', 'agriculture'] },
-    { name: 'Healthcare', value: 25, tags: ['health', 'medical'] },
-    { name: 'Senior Citizen', value: 20, tags: ['elderly', 'pension'] },
-  ];
-  // Dropdown options for time range
-  const timeFilterOptions = [
-    'Last Week',
-    'Last Month',
-    'Last 6 Months',
-    'Last Year',
-    'All Time',
-  ];
-  const [activeTimeFilter, setActiveTimeFilter] = useState('Last Year');
+        // Fetch all citizens
+        const { data: citizens } = await axios.get<Citizen[]>(`${API_BASE_URL}/governments/${getGovernmentId()}/citizens`);
 
-  // Time range options for the line chart
-  const timeRanges = [
-    { label: 'Last 30 days', value: '30d' },
-    { label: 'Last 6 months', value: '6m' },
-    { label: 'Last 1 year', value: '1y' },
-  ];
-  const [selectedRange, setSelectedRange] = useState('6m');
+        // Calculate total schemes
+        const totalSchemes = schemes.length;
 
-  // Scheme filters
-  const schemeFilters = [
-    { key: 'girls', label: 'Girls Education', active: true, color: '#FF6384' },
-    { key: 'farmers', label: 'Farmer Support', active: true, color: '#36A2EB' },
-    { key: 'health', label: 'Healthcare', active: true, color: '#FFCE56' },
-    {
-      key: 'elderly',
-      label: 'Senior Citizens',
-      active: true,
-      color: '#4BC0C0',
-    },
-  ];
-  const [activeFilters, setActiveFilters] = useState(
-    schemeFilters.filter((f) => f.active).map((f) => f.key),
-  );
+        // Calculate total beneficiaries (citizens with at least one scheme)
+        const totalBeneficiaries = citizens.filter(citizen => citizen.scheme_info && citizen.scheme_info.length > 0).length;
 
-  // Toggle a filter
-  const toggleFilter = (key: string) => {
-    if (activeFilters.includes(key)) {
-      if (activeFilters.length > 1) {
-        setActiveFilters(activeFilters.filter((f) => f !== key));
+        // Calculate total fund allocated
+        const totalFundAllocated = schemes.reduce((sum: number, scheme: Scheme) => 
+          sum + (scheme.amount || 0), 0);
+
+        // Calculate pending approvals (schemes with status 'pending')
+        const pendingApprovals = schemes.filter((scheme: Scheme) => 
+          scheme.status === 'pending').length;
+
+        // Group schemes by tags
+        const schemesByTag = schemes.reduce((acc: any[], scheme: Scheme) => {
+          const tags = scheme.tags || [];
+          tags.forEach((tag: string) => {
+            const existingTag = acc.find(t => t.name === tag);
+            if (existingTag) {
+              existingTag.value += 1;
+            } else {
+              acc.push({
+                name: tag,
+                value: 1,
+                tags: [tag]
+              });
+            }
+          });
+          return acc;
+        }, []);
+
+        // Generate monthly data (last 12 months)
+        const monthlyData = Array.from({ length: 12 }, (_, i) => {
+          const date = new Date();
+          date.setMonth(date.getMonth() - i);
+          return {
+            name: date.toLocaleString('default', { month: 'short' }),
+            amount: Math.floor(Math.random() * 1000) // This would be replaced with actual data
+          };
+        }).reverse();
+
+        setStats({
+          totalSchemes,
+          totalBeneficiaries,
+          totalFundAllocated,
+          pendingApprovals,
+          schemesByTag,
+          monthlyData
+        });
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setIsLoading(false);
       }
-    } else {
-      setActiveFilters([...activeFilters, key]);
-    }
-  };
+    };
+
+    fetchDashboardData();
+  }, []);
 
   // Prepare data for charts
   const fundsLineData = {
-    labels: monthlyData.map((d) => d.name),
+    labels: stats.monthlyData.map((d) => d.name),
     datasets: [
       {
         label: 'Funds Distributed',
-        data: monthlyData.map((d) => d.amount),
+        data: stats.monthlyData.map((d) => d.amount),
         borderColor: '#2563EB',
         backgroundColor: '#93C5FD',
         borderWidth: 2,
@@ -219,26 +250,20 @@ export default function Dashboard() {
     },
   };
 
-  // Create data mapping for donut chart
-  const donutDataByFilter: Record<string, FilterData> = {
-    girls: { value: 25, color: '#FF6384' },
-    farmers: { value: 30, color: '#36A2EB' },
-    health: { value: 25, color: '#FFCE56' },
-    elderly: { value: 20, color: '#4BC0C0' },
-  };
-
   // Donut chart data
-  const filteredDonut = activeFilters.map(
-    (f) => donutDataByFilter[f as keyof typeof donutDataByFilter],
-  );
   const donutChartData = {
-    labels: activeFilters.map(
-      (f) => schemeFilters.find((s) => s.key === f)?.label,
-    ),
+    labels: stats.schemesByTag.map((s) => s.name),
     datasets: [
       {
-        data: filteredDonut.map((d) => d.value),
-        backgroundColor: filteredDonut.map((d) => d.color),
+        data: stats.schemesByTag.map((s) => s.value),
+        backgroundColor: [
+          '#FF6384',
+          '#36A2EB',
+          '#FFCE56',
+          '#4BC0C0',
+          '#9966FF',
+          '#FF9F40',
+        ],
         borderWidth: 0,
         hoverOffset: 8,
       },
@@ -251,7 +276,7 @@ export default function Dashboard() {
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: (ctx: any) => `${ctx.label}: ${ctx.raw}%`,
+          label: (ctx: any) => `${ctx.label}: ${ctx.raw} schemes`,
         },
         backgroundColor: '#fff',
         titleColor: '#222',
@@ -263,8 +288,6 @@ export default function Dashboard() {
       },
     },
   };
-
-  const totalDistributed = filteredDonut.reduce((sum, d) => sum + d.value, 0);
 
   return (
     <div className={`${inter.className} flex min-h-screen bg-white`}>
@@ -348,9 +371,9 @@ export default function Dashboard() {
                 <CreditCard className="h-4 w-4 text-gray-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">65</div>
+                <div className="text-2xl font-bold">{stats.totalSchemes}</div>
                 <p className="flex items-center text-xs text-green-500">
-                  +5.1% from last month
+                  Active government schemes
                 </p>
               </CardContent>
             </Card>
@@ -362,9 +385,11 @@ export default function Dashboard() {
                 <Users className="h-4 w-4 text-gray-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">3.2M</div>
+                <div className="text-2xl font-bold">
+                  {stats.totalBeneficiaries.toLocaleString()}
+                </div>
                 <p className="flex items-center text-xs text-green-500">
-                  +12.4% from last month
+                  Citizens enrolled in schemes
                 </p>
               </CardContent>
             </Card>
@@ -376,9 +401,11 @@ export default function Dashboard() {
                 <Wallet className="h-4 w-4 text-gray-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">₹8,500 Cr</div>
+                <div className="text-2xl font-bold">
+                  ₹{(stats.totalFundAllocated / 1000).toFixed(1)}K
+                </div>
                 <p className="flex items-center text-xs text-green-500">
-                  +7.8% from last month
+                  Total funds distributed
                 </p>
               </CardContent>
             </Card>
@@ -390,9 +417,9 @@ export default function Dashboard() {
                 <BarChart3 className="h-4 w-4 text-gray-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">42</div>
+                <div className="text-2xl font-bold">{stats.pendingApprovals}</div>
                 <p className="flex items-center text-xs text-red-500">
-                  +2.5% from last month
+                  Schemes awaiting approval
                 </p>
               </CardContent>
             </Card>
@@ -415,33 +442,13 @@ export default function Dashboard() {
                 <h2 className="text-lg font-semibold text-gray-800">
                   Monthly Funds Disbursed
                 </h2>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="rounded-lg border-gray-200 bg-white/70 px-3 py-1 text-xs hover:bg-blue-50"
-                    >
-                      {timeRanges.find((r) => r.value === selectedRange)?.label}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {timeRanges.map((range) => (
-                      <DropdownMenuItem
-                        key={range.value}
-                        onClick={() => setSelectedRange(range.value)}
-                      >
-                        {range.label}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
               <div className="flex h-[240px] w-full items-center">
                 <Line data={fundsLineData} options={fundsLineOptions} />
               </div>
             </motion.div>
 
-            {/* Card 2: Funds Distributed by Scheme */}
+            {/* Card 2: Schemes by Category */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -455,57 +462,20 @@ export default function Dashboard() {
             >
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-800">
-                  Funds Distributed by Scheme
+                  Schemes by Category
                 </h2>
-                <div className="flex flex-wrap gap-2">
-                  {schemeFilters.map((filter) =>
-                    activeFilters.includes(filter.key) ? (
-                      <Badge
-                        key={filter.key}
-                        className="flex cursor-pointer items-center gap-1 rounded-full bg-opacity-80 px-3 py-1 text-xs font-medium"
-                        style={{ background: filter.color, color: '#333' }}
-                      >
-                        {filter.label}
-                        <button
-                          className="ml-1 text-gray-500 hover:text-gray-800 focus:outline-none"
-                          onClick={() =>
-                            setActiveFilters(
-                              activeFilters.filter((f) => f !== filter.key),
-                            )
-                          }
-                          aria-label={`Remove ${filter.label}`}
-                          type="button"
-                        >
-                          ×
-                        </button>
-                      </Badge>
-                    ) : (
-                      <Badge
-                        key={filter.key}
-                        className="flex cursor-pointer items-center gap-1 rounded-full border border-dashed border-gray-300 bg-white/60 px-3 py-1 text-xs font-medium hover:bg-opacity-90"
-                        style={{ color: filter.color }}
-                        onClick={() =>
-                          setActiveFilters([...activeFilters, filter.key])
-                        }
-                      >
-                        {filter.label}
-                      </Badge>
-                    ),
-                  )}
-                </div>
               </div>
               <div className="relative flex h-[240px] w-full items-center justify-center">
                 <Pie data={donutChartData} options={donutChartOptions} />
-                {/* Center text overlay */}
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
                   <span className="mb-1 text-xs text-gray-500">
-                    Total Distributed
+                    Total Categories
                   </span>
                   <span className="text-2xl font-bold text-gray-800">
-                    ₹{totalDistributed}Cr
+                    {stats.schemesByTag.length}
                   </span>
-          </div>
-              </div>{' '}
+                </div>
+              </div>
             </motion.div>
 
             {/* Recent Activity */}
