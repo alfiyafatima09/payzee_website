@@ -32,7 +32,7 @@ import { Label } from '@/components/ui/label';
 const inter = Inter({ subsets: ['latin'] });
 
 // Constants
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_BASE_URL = 'https://api.1mindlabs.org/api/v1';
 
 // Define types for our API response
 interface AccountInfo {

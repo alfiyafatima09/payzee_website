@@ -41,7 +41,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 // Constants
 const GOVERNMENT_ID = '18278f37-44dd-4ec3-9459-d22961c0ee33';
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_BASE_URL = 'https://api.1mindlabs.org/api/v1';
 
 interface SchemeResponse {
   message: string;

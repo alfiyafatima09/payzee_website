@@ -3,8 +3,6 @@
 import { useState, useEffect, use } from 'react';
 import axios from 'axios';
 import {
-  Bell,
-  Menu,
   ArrowLeft,
   Mail,
   Phone,
@@ -21,17 +19,10 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/components/ui/use-toast';
 import { getGovernmentId } from '@/app/utils/auth';
+import { Header } from '@/components/header';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Card,
   CardContent,
@@ -51,7 +42,7 @@ import {
 const inter = Inter({ subsets: ['latin'] });
 
 // Constants
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_BASE_URL = 'https://api.1mindlabs.org/api/v1';
 
 // Define types for our API response
 interface AccountInfo {
@@ -121,7 +112,8 @@ export default function BeneficiaryDetailsPage({
     const fetchBeneficiaryDetails = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(
+        console.log('Fetching beneficiary with ID:', resolvedParams.id);
+        const response = await axios.get<ApiCitizen>(
           `${API_BASE_URL}/governments/${getGovernmentId()}/citizens/${resolvedParams.id}`,
           {
             headers: {
@@ -131,16 +123,21 @@ export default function BeneficiaryDetailsPage({
             withCredentials: true
           }
         );
+        console.log('API Response:', response.data);
+        if (!response.data) {
+          throw new Error('No beneficiary data found in response');
+        }
         setBeneficiary(response.data);
         setError(null);
-      } catch (error) {
-        console.error('Error fetching beneficiary details:', error);
+      } catch (err) {
+        console.error('Error fetching beneficiary details:', err);
+        const error = err as Error;
+        setError('Failed to load beneficiary details');
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: 'Failed to fetch beneficiary details. Please try again.',
+          description: error.message || 'Failed to fetch beneficiary details. Please try again.',
         });
-        setError('Failed to load beneficiary details');
       } finally {
         setIsLoading(false);
       }
@@ -148,7 +145,7 @@ export default function BeneficiaryDetailsPage({
 
     const fetchSchemes = async () => {
       try {
-        const response = await axios.get(
+        const response = await axios.get<Scheme[]>(
           `${API_BASE_URL}/governments/${getGovernmentId()}/schemes`,
           {
             headers: {
@@ -158,6 +155,11 @@ export default function BeneficiaryDetailsPage({
             withCredentials: true
           }
         );
+        if (!response.data) {
+          console.warn('No schemes data found in response');
+          setSchemes([]);
+          return;
+        }
         setSchemes(response.data);
       } catch (error) {
         console.error('Error fetching schemes:', error);
@@ -169,9 +171,14 @@ export default function BeneficiaryDetailsPage({
       }
     };
 
-    fetchBeneficiaryDetails();
-    fetchSchemes();
-  }, [resolvedParams.id]);
+    if (resolvedParams.id) {
+      fetchBeneficiaryDetails();
+      fetchSchemes();
+    } else {
+      setError('Invalid beneficiary ID');
+      setIsLoading(false);
+    }
+  }, [resolvedParams.id, router]);
 
   if (isLoading) {
     return (
@@ -206,51 +213,7 @@ export default function BeneficiaryDetailsPage({
       {/* Main content */}
       <div className="flex-1 transition-all duration-300">
         {/* Top navbar */}
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-white px-4 sm:px-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setIsMobileOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
-          <div className="flex items-center gap-2 md:hidden">
-            <span className="text-lg font-semibold">Payzee</span>
-          </div>
-          <div className="ml-auto flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="sr-only">Notifications</span>
-              <Badge className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black p-0 text-white">
-                3
-              </Badge>
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Image
-                    src="/placeholder.svg?height=32&width=32"
-                    width={32}
-                    height={32}
-                    className="rounded-full"
-                    alt="Admin avatar"
-                  />
-                  <span className="sr-only">Toggle user menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Logout</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
+        <Header isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
 
         {/* Beneficiary details content */}
         <main className="p-4 sm:p-6">

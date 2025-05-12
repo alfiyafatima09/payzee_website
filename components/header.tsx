@@ -28,7 +28,7 @@ interface GovernmentInfo {
   };
 }
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_BASE_URL = 'https://api.1mindlabs.org/api/v1';
 
 export function Header({ isMobileOpen, setIsMobileOpen }: HeaderProps) {
   const [governmentInfo, setGovernmentInfo] = useState<GovernmentInfo | null>(null);

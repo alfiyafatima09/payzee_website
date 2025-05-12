@@ -78,7 +78,7 @@ interface GovernmentResponse {
   wallet_info: WalletInfo;
 }
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_BASE_URL = 'https://api.1mindlabs.org/api/v1';
 
 export default function SettingsPage() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
